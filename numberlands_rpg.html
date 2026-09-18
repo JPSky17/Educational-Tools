@@ -1,0 +1,3472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Numberlands — A Math RPG</title>
+<script>window.storage = window.storage || {get:async()=>null,set:async()=>null,delete:async()=>null,list:async()=>null};</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment:#F1E9D6;
+    --parchment-dark:#E4D8BC;
+    --ink:#3D2B1F;
+    --ink-soft:#6B5645;
+    --teal:#2A9D8F;
+    --coral:#E76F51;
+    --amber:#F4A340;
+    --indigo:#5B6EE1;
+    --plum:#8E5572;
+    --gold:#D9A441;
+    --white:#FFFDF8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Nunito',sans-serif;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,0.35), transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(255,255,255,0.25), transparent 45%),
+      var(--parchment);
+    color:var(--ink);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{font-family:'Baloo 2',sans-serif;}
+
+  /* ---------- HEADER ---------- */
+  header{
+    padding:26px 24px 10px;
+    text-align:center;
+    position:relative;
+  }
+  header h1{
+    font-size:clamp(28px,5vw,44px);
+    margin:0;
+    color:var(--ink);
+    letter-spacing:0.5px;
+  }
+  header h1 span{color:var(--coral);}
+  header p{
+    margin:6px 0 0;
+    color:var(--ink-soft);
+    font-weight:700;
+    font-size:15px;
+  }
+
+  /* ---------- LAYOUT ---------- */
+  .layout{
+    max-width:1080px;
+    margin:0 auto;
+    padding:14px 20px 10px;
+    display:grid;
+    grid-template-columns:280px 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width:820px){
+    .layout{grid-template-columns:1fr;}
+  }
+
+  /* ---------- CHARACTER CARD ---------- */
+  .heroCard{
+    background:var(--white);
+    border:3px solid var(--parchment-dark);
+    border-radius:20px;
+    padding:18px 16px 16px;
+    box-shadow:0 6px 0 var(--parchment-dark);
+    position:sticky;
+    top:14px;
+  }
+  .heroTop{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .heroAvatarWrap{
+    width:76px;height:76px;
+    flex-shrink:0;
+    position:relative;
+  }
+  .heroAvatarWrap svg{width:100%;height:100%;display:block;}
+  .heroLevelBadge{
+    position:absolute;
+    bottom:-4px;right:-4px;
+    background:var(--indigo);
+    color:#fff;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:12px;
+    border-radius:999px;
+    padding:2px 7px;
+    border:2px solid var(--white);
+  }
+  .heroName{
+    font-weight:800;
+    font-size:16px;
+    margin:0;
+  }
+  .heroTitle{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:700;
+    margin-top:2px;
+  }
+  .editHeroBtn{
+    margin-top:6px;
+    font-size:10.5px;
+    font-weight:800;
+    color:var(--indigo);
+    background:none;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    text-decoration:underline;
+  }
+  .xpTrack{
+    margin-top:12px;
+  }
+  .xpLabel{
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    font-weight:800;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .xpBar{
+    height:12px;
+    background:var(--parchment-dark);
+    border-radius:999px;
+    overflow:hidden;
+    border:2px solid var(--parchment-dark);
+  }
+  .xpFill{
+    height:100%;
+    background:linear-gradient(90deg, var(--teal), var(--amber));
+    border-radius:999px;
+    transition:width .5s ease;
+  }
+  .gearRow{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+  .gearSlot{
+    width:42px;height:42px;
+    border-radius:12px;
+    background:var(--parchment);
+    border:2px dashed var(--parchment-dark);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:19px;
+    position:relative;
+  }
+  .gearSlot.unlocked{
+    border-style:solid;
+    border-color:var(--gold);
+    background:#FFF7E4;
+  }
+  .gearSlot .lockDot{
+    position:absolute;
+    top:-4px;right:-4px;
+    font-size:10px;
+  }
+  .gearIcon{display:inline-block;}
+  .gearIconLocked{opacity:.3;filter:grayscale(0.6);}
+  .heroStats{
+    margin-top:14px;
+    display:flex;
+    gap:6px;
+  }
+  .heroStat{
+    flex:1;
+    background:var(--parchment);
+    border-radius:10px;
+    padding:6px 4px;
+    text-align:center;
+  }
+  .heroStat .n{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;}
+  .heroStat .l{font-size:9px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;}
+  .heroNote{
+    margin-top:12px;
+    font-size:11px;
+    color:var(--ink-soft);
+    line-height:1.4;
+  }
+  .saveTag{
+    font-size:10px;
+    color:var(--teal);
+    font-weight:800;
+    opacity:0;
+    transition:opacity .3s;
+  }
+  .saveTag.show{opacity:1;}
+  .heroFooterRow{
+    margin-top:8px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .resetBtn{
+    font-family:'Nunito',sans-serif;
+    font-size:10.5px;
+    font-weight:800;
+    color:var(--ink-soft);
+    background:var(--parchment);
+    border:1.5px solid var(--parchment-dark);
+    border-radius:999px;
+    padding:4px 10px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .resetBtn:hover{
+    color:var(--coral);
+    border-color:var(--coral);
+  }
+  .resetConfirmText{
+    font-size:10.5px;
+    font-weight:800;
+    color:var(--coral);
+  }
+  .resetConfirmBtns{
+    display:flex;
+    gap:6px;
+  }
+  .resetBtnDanger{
+    background:var(--coral);
+    border-color:var(--coral);
+    color:#fff;
+  }
+  .resetBtnDanger:hover{
+    color:#fff;
+    background:#d45f42;
+    border-color:#d45f42;
+  }
+
+  /* ---------- MAP ---------- */
+  .mapWrap{
+    position:relative;
+  }
+  svg.path{
+    position:absolute;
+    top:0;left:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+  }
+  .islands{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:70px;
+    padding:20px 0 60px;
+  }
+  .islandRow{
+    display:flex;
+    align-items:center;
+    position:relative;
+  }
+  .islandRow.right{justify-content:flex-end;}
+  .islandRow.left{justify-content:flex-start;}
+
+  .island{
+    position:relative;
+    width:190px;
+    text-align:center;
+    cursor:pointer;
+    user-select:none;
+    transition:transform .18s ease;
+  }
+  .island:hover{transform:translateY(-4px);}
+  .island.locked{cursor:not-allowed;}
+  .island.locked:hover{transform:none;}
+
+  .islandBlob{
+    width:150px;
+    height:110px;
+    margin:0 auto;
+    border-radius:58% 42% 62% 38% / 48% 55% 45% 52%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    color:var(--white);
+    box-shadow:0 8px 0 rgba(0,0,0,0.15), 0 8px 18px rgba(0,0,0,0.12);
+    position:relative;
+    border:3px solid rgba(255,255,255,0.5);
+  }
+  .island.locked .islandBlob{
+    filter:grayscale(0.75) brightness(0.92);
+    box-shadow:0 8px 0 rgba(0,0,0,0.08);
+  }
+  .island.muncherIsland{width:130px;}
+  .island.muncherIsland .islandBlob{
+    width:104px;
+    height:80px;
+    border-style:dashed;
+    border-width:3px;
+    box-shadow:0 6px 0 rgba(0,0,0,0.12), 0 6px 14px rgba(0,0,0,0.1);
+  }
+  .island.muncherIsland .islandBlob .num{font-size:24px;}
+  .island.muncherIsland .islandName{font-size:12.5px;}
+  .islandBlob .num{
+    font-family:'Baloo 2',sans-serif;
+    font-size:34px;
+    font-weight:800;
+    line-height:1;
+  }
+  .islandBlob .op{
+    font-size:13px;
+    font-weight:700;
+    margin-top:2px;
+  }
+  .lockIcon{
+    position:absolute;
+    top:8px;right:8px;
+    font-size:16px;
+  }
+  .islandName{
+    margin-top:10px;
+    font-weight:800;
+    font-size:15px;
+    color:var(--ink);
+  }
+  .islandStars{
+    margin-top:2px;
+    font-size:14px;
+    letter-spacing:2px;
+  }
+  .star-on{color:var(--gold);}
+  .star-off{color:#D9CBAE;}
+  .muncherTag{
+    font-family:'Nunito',sans-serif;
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .island.bossIsland{width:190px;}
+  .island.bossIsland .islandBlob{
+    background:linear-gradient(135deg, var(--coral), var(--gold));
+    box-shadow:0 8px 0 rgba(0,0,0,0.15), 0 8px 18px rgba(0,0,0,0.12), 0 0 0 6px rgba(217,164,65,0.25);
+    animation:bossGlow 2.4s ease-in-out infinite;
+  }
+  .island.bossIsland.locked .islandBlob{animation:none;}
+  .island.bossIsland .islandBlob .num{font-size:38px;}
+  @keyframes bossGlow{
+    0%,100%{box-shadow:0 8px 0 rgba(0,0,0,0.15), 0 8px 18px rgba(0,0,0,0.12), 0 0 0 6px rgba(217,164,65,0.25);}
+    50%{box-shadow:0 8px 0 rgba(0,0,0,0.15), 0 8px 22px rgba(0,0,0,0.18), 0 0 0 12px rgba(217,164,65,0.08);}
+  }
+  .heroMarker{
+    position:absolute;
+    width:34px;height:34px;
+    transform:translate(-50%,-130%);
+    pointer-events:none;
+    filter:drop-shadow(0 3px 3px rgba(0,0,0,0.25));
+    transition:left .5s ease, top .5s ease;
+  }
+
+  /* ---------- QUEST PANEL ---------- */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(61,43,31,0.35);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    padding:16px;
+  }
+  .overlay.show{display:flex;}
+  .questPanel{
+    background:var(--white);
+    border-radius:22px;
+    max-width:480px;
+    width:100%;
+    padding:30px 28px 26px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+    position:relative;
+    animation:pop .22s ease;
+    max-height:90vh;
+    overflow-y:auto;
+  }
+  .questPanel.muncherActive{
+    max-width:760px;
+  }
+  @keyframes pop{from{transform:scale(0.92);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .questHeader{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:6px;
+  }
+  .questBadge{
+    width:46px;height:46px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:white;font-size:20px;font-weight:800;
+    font-family:'Baloo 2',sans-serif;
+    flex-shrink:0;
+  }
+  .questHeader h2{margin:0;font-size:20px;}
+  .questHeader p{margin:2px 0 0;color:var(--ink-soft);font-weight:700;font-size:13px;}
+  .closeBtn{
+    position:absolute;
+    top:16px;right:18px;
+    background:none;border:none;
+    font-size:20px;
+    cursor:pointer;
+    color:var(--ink-soft);
+    font-weight:800;
+  }
+  .progressBar{
+    display:flex;gap:5px;
+    margin:18px 0 6px;
+  }
+  .progressBar .seg{
+    flex:1;
+    height:8px;
+    border-radius:4px;
+    background:var(--parchment-dark);
+  }
+  .progressBar .seg.done{background:var(--teal);}
+  .progressBar .seg.current{background:var(--amber);}
+
+  .problemArea{
+    text-align:center;
+    padding:26px 4px 8px;
+  }
+  .problemText{
+    font-family:'Baloo 2',sans-serif;
+    font-size:clamp(30px,7vw,42px);
+    font-weight:800;
+    color:var(--ink);
+    margin-bottom:20px;
+  }
+  .problemVisual{
+    display:flex;
+    justify-content:center;
+  }
+  .problemArea:has(.problemVisual) .problemText{
+    font-size:clamp(18px,4vw,22px);
+    font-weight:700;
+  }
+  .choices{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .choiceBtn{
+    font-family:'Baloo 2',sans-serif;
+    font-size:22px;
+    font-weight:700;
+    padding:16px 10px;
+    border-radius:14px;
+    border:3px solid var(--parchment-dark);
+    background:var(--parchment);
+    color:var(--ink);
+    cursor:pointer;
+    transition:all .12s ease;
+  }
+  .choiceBtn:hover{border-color:var(--indigo);transform:translateY(-2px);}
+  .choiceBtn.correct{background:var(--teal);border-color:var(--teal);color:white;}
+  .choiceBtn.wrong{background:var(--coral);border-color:var(--coral);color:white;}
+  .choiceBtn:disabled{cursor:default;}
+
+  .feedback{
+    min-height:26px;
+    margin-top:14px;
+    font-weight:800;
+    color:var(--teal);
+  }
+  .feedback.bad{color:var(--coral);}
+  .xpToast{
+    display:inline-block;
+    margin-top:6px;
+    font-size:12px;
+    font-weight:800;
+    color:var(--gold);
+    background:#FFF7E4;
+    border-radius:999px;
+    padding:2px 10px;
+  }
+
+  .nextBtn{
+    margin-top:10px;
+    background:var(--indigo);
+    color:white;
+    border:none;
+    padding:12px 28px;
+    border-radius:999px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    cursor:pointer;
+    display:none;
+  }
+  .nextBtn.show{display:inline-block;}
+
+  /* ---------- NUMBER MUNCHER ---------- */
+  .muncherPrompt{
+    text-align:center;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:15px;
+    color:var(--ink);
+    margin:12px 0 10px;
+  }
+  .muncherGrid{
+    position:relative;
+    display:grid;
+    gap:10px;
+    background:var(--parchment-dark);
+    padding:10px;
+    border-radius:18px;
+  }
+  .muncherCell{
+    aspect-ratio:1;
+    background:var(--white);
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:21px;
+    color:var(--ink);
+    border:2px solid var(--parchment-dark);
+    padding:4px;
+    text-align:center;
+    line-height:1.05;
+  }
+  .muncherCell.eaten{
+    background:transparent;
+    border-color:transparent;
+  }
+  .muncherSprite{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    z-index:2;
+  }
+  .muncherSprite.player svg{width:48px;height:48px;display:block;}
+  .muncherSprite.enemy{font-size:36px;z-index:1;}
+  .dpad{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    margin-top:16px;
+  }
+  .dpadRow{display:flex;gap:8px;align-items:center;}
+  .dpad button{
+    width:42px;height:42px;
+    border-radius:10px;
+    border:2px solid var(--parchment-dark);
+    background:var(--parchment);
+    font-size:16px;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .dpad button:hover{border-color:var(--indigo);}
+  .munchBtn{
+    width:54px !important;
+    height:54px !important;
+    border-radius:50% !important;
+    background:var(--amber) !important;
+    border-color:#c9852f !important;
+    font-size:22px !important;
+    box-shadow:0 3px 0 #c9852f;
+  }
+  .munchBtn:hover{border-color:var(--gold) !important;}
+  .muncherHint{
+    text-align:center;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:12px;
+    line-height:1.4;
+  }
+
+  /* ---------- DRAGON RIDER SHOWDOWN (BOSS) ---------- */
+  .questPanel.bossActive{max-width:760px;}
+  .bossPrompt{
+    text-align:center;
+    margin:10px 0 12px;
+  }
+  .bossVisual{margin-bottom:8px;}
+  .bossPromptText{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:clamp(18px,4vw,24px);
+    color:var(--ink);
+  }
+  .bossArena{
+    position:relative;
+    height:clamp(220px,32vw,280px);
+    background:linear-gradient(180deg, #FFE9C7 0%, #FFF7E4 100%);
+    border-radius:16px;
+    border:3px solid var(--parchment-dark);
+    overflow:hidden;
+  }
+  .bossLane{
+    height:calc(100% / 4);
+    border-bottom:2px dashed rgba(61,43,31,0.1);
+  }
+  .bossLane:last-child{border-bottom:none;}
+  .bossDragon{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    font-size:clamp(34px,6vw,44px);
+    line-height:1;
+    transition:top .22s ease;
+    z-index:3;
+    filter:drop-shadow(0 3px 3px rgba(0,0,0,0.2));
+  }
+  .bossDragonEmoji{display:block;transform:scaleX(-1);}
+  .bossRider{
+    position:absolute;
+    top:-14px;left:2px;
+    width:22px;height:22px;
+  }
+  .bossRider svg{width:100%;height:100%;display:block;}
+  .bossTarget{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    width:clamp(38px,7vw,48px);
+    height:clamp(38px,7vw,48px);
+    border-radius:50%;
+    background:var(--white);
+    border:3px solid var(--parchment-dark);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:clamp(13px,2.6vw,16px);
+    color:var(--ink);
+    box-shadow:0 3px 0 rgba(0,0,0,0.1);
+    z-index:2;
+  }
+  .bossFireball{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    font-size:22px;
+    z-index:4;
+    pointer-events:none;
+  }
+  .bossArena.flash-good{animation:bossFlashGood .4s ease;}
+  .bossArena.flash-bad{animation:bossFlashBad .4s ease;}
+  @keyframes bossFlashGood{
+    0%{box-shadow:inset 0 0 0 999px rgba(42,157,143,0.35);}
+    100%{box-shadow:inset 0 0 0 999px rgba(42,157,143,0);}
+  }
+  @keyframes bossFlashBad{
+    0%{box-shadow:inset 0 0 0 999px rgba(231,111,81,0.35);}
+    100%{box-shadow:inset 0 0 0 999px rgba(231,111,81,0);}
+  }
+
+  /* ---------- SKYFIRE FLIGHT ---------- */
+  .questPanel.flightActive{max-width:760px;}
+  .flightPrompt{text-align:center;margin:10px 0 12px;}
+  .flightPromptText{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:clamp(18px,4vw,24px);
+    color:var(--ink);
+  }
+  .flightArena{
+    position:relative;
+    height:clamp(260px,42vw,340px);
+    border-radius:16px;
+    border:3px solid var(--parchment-dark);
+    overflow:hidden;
+    background:radial-gradient(ellipse at 50% 15%, #fff7e0 0%, #ffd9a0 18%, #7fb3e8 45%, #3f6fb0 75%, #21406e 100%);
+  }
+  .flightCloud{
+    position:absolute;
+    font-size:26px;
+    opacity:0.55;
+    pointer-events:none;
+    z-index:1;
+  }
+  .flightDragon{
+    position:absolute;
+    left:50%;bottom:-6%;
+    transform:translateX(-50%);
+    font-size:clamp(70px,16vw,110px);
+    line-height:1;
+    z-index:5;
+    filter:drop-shadow(0 6px 6px rgba(0,0,0,0.25));
+    pointer-events:none;
+  }
+  .flightDragonEmoji{display:block;}
+  .flightRider{
+    position:absolute;
+    top:2%;left:50%;
+    transform:translateX(-50%);
+    width:26px;height:26px;
+  }
+  .flightRider svg{width:100%;height:100%;display:block;}
+  .flightDebris{
+    position:absolute;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    z-index:2;
+    pointer-events:none;
+  }
+  .flightDebrisRock{
+    display:block;
+    line-height:1;
+    filter:drop-shadow(0 2px 2px rgba(0,0,0,0.25));
+  }
+  .flightDebrisVal{
+    margin-top:-2px;
+    background:var(--white);
+    border:2px solid var(--parchment-dark);
+    border-radius:999px;
+    padding:1px 7px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:12px;
+    color:var(--ink);
+    box-shadow:0 2px 0 rgba(0,0,0,0.08);
+    white-space:nowrap;
+  }
+  .flightFlame{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    font-size:26px;
+    z-index:4;
+    pointer-events:none;
+    transition:left .22s ease-out, top .22s ease-out, transform .22s ease-out, opacity .22s ease-out;
+  }
+  .flightArena.flash-good{animation:bossFlashGood .4s ease;}
+  .flightArena.flash-bad{animation:bossFlashBad .4s ease;}
+
+  /* ---------- SKYFIRE VICTORY CUTSCENE ---------- */
+  .questPanel.victorySceneActive{max-width:640px;padding:0;overflow:hidden;border-radius:22px;}
+  .victoryScene{
+    position:relative;
+    height:clamp(280px,52vw,360px);
+    overflow:hidden;
+    background:linear-gradient(180deg, #fbead0 0%, #f7c98f 30%, #e08a4f 55%, #2a1810 100%);
+  }
+  .victorySky{
+    position:absolute;
+    inset:0 42% 0 0;
+    background:radial-gradient(ellipse at 30% 20%, #fff7e0 0%, #ffd9a0 25%, #7fb3e8 55%, #3f6fb0 100%);
+    opacity:0.9;
+  }
+  .victoryCloud{
+    position:absolute;
+    font-size:20px;
+    opacity:0.6;
+    z-index:1;
+    animation:victoryCloudDrift 7s ease-in-out infinite;
+  }
+  @keyframes victoryCloudDrift{
+    0%,100%{ transform:translateX(0); }
+    50%{ transform:translateX(8px); }
+  }
+  .victoryTwinkle{
+    position:absolute;
+    font-size:11px;
+    z-index:1;
+    color:#fff7e0;
+    opacity:0;
+    animation:victorySparkleTwinkle 1.8s ease-in-out infinite;
+  }
+  .victoryMountainWrap{
+    position:absolute;
+    right:-8%;top:-10%;
+    width:78%;height:130%;
+    z-index:1;
+    overflow:hidden;
+  }
+  .victoryMountainWrap svg{
+    display:block;
+    width:100%;
+    height:100%;
+  }
+  .victoryGlow{
+    position:absolute;
+    right:2%;bottom:8%;
+    width:46%;height:55%;
+    background:radial-gradient(ellipse at center, rgba(255,210,110,0.75) 0%, rgba(255,180,60,0.35) 45%, rgba(255,180,60,0) 75%);
+    z-index:2;
+    pointer-events:none;
+    opacity:0.55;
+    animation:victoryGlowPulse 2.6s ease-in-out 3.1s infinite;
+  }
+  @keyframes victoryGlowPulse{
+    0%,100%{ opacity:0.5; }
+    50%{ opacity:0.85; }
+  }
+  .victoryShockwave{
+    position:absolute;
+    right:14%;bottom:16%;
+    width:10px;height:10px;
+    border-radius:50%;
+    border:3px solid #ffe08a;
+    z-index:3;
+    opacity:0;
+    transform:translate(50%,50%) scale(0.3);
+    animation:victoryShockwaveBurst 0.7s ease-out 3.05s forwards;
+    pointer-events:none;
+  }
+  @keyframes victoryShockwaveBurst{
+    0%{ opacity:0.9; transform:translate(50%,50%) scale(0.3); }
+    100%{ opacity:0; transform:translate(50%,50%) scale(9); }
+  }
+  .victoryTreasurePile{
+    position:absolute;
+    right:4%;bottom:6%;
+    width:42%;height:30%;
+    z-index:3;
+  }
+  .victoryTreasurePile span{
+    position:absolute;
+    bottom:0;
+    font-size:22px;
+    filter:drop-shadow(0 2px 2px rgba(0,0,0,0.4));
+  }
+  .victorySparkle{
+    position:absolute;
+    font-size:16px;
+    z-index:4;
+    opacity:0;
+    animation:victorySparklePop 1.4s ease-in .6s forwards, victorySparkleTwinkle 1.6s ease-in-out 2s infinite;
+    pointer-events:none;
+  }
+  @keyframes victorySparklePop{
+    0%{opacity:0; transform:scale(0.3);}
+    60%{opacity:1; transform:scale(1.2);}
+    100%{opacity:1; transform:scale(1);}
+  }
+  @keyframes victorySparkleTwinkle{
+    0%,100%{opacity:0.9;}
+    50%{opacity:0.35;}
+  }
+  .victoryConfetti span{
+    position:absolute;
+    top:-8%;
+    font-size:16px;
+    opacity:0;
+    animation:victoryConfettiFall 1.8s ease-in forwards;
+    z-index:6;
+    pointer-events:none;
+  }
+  @keyframes victoryConfettiFall{
+    0%{ opacity:0; transform:translateY(0) rotate(0deg); }
+    12%{ opacity:1; }
+    100%{ opacity:0; transform:translateY(150px) rotate(200deg); }
+  }
+  .victoryFlyer{
+    position:absolute;
+    left:77%;top:33%;
+    width:100px;height:90px;
+    transform:translate(-50%,-50%) scale(0.55) rotate(-4deg);
+    z-index:5;
+    animation:victoryFlyPath 3.3s cubic-bezier(.32,.63,.34,1) forwards;
+    pointer-events:none;
+  }
+  @keyframes victoryFlyPath{
+    0%{ left:-10%; top:72%; transform:translate(-50%,-50%) scale(0.62) rotate(-3deg); }
+    32%{ left:26%; top:26%; transform:translate(-50%,-50%) scale(0.85) rotate(-11deg); }
+    58%{ left:52%; top:36%; transform:translate(-50%,-50%) scale(0.95) rotate(-6deg); }
+    80%{ left:70%; top:30%; transform:translate(-50%,-50%) scale(0.68) rotate(-2deg); }
+    90%{ left:78%; top:26%; transform:translate(-50%,-50%) scale(0.62) rotate(4deg); }
+    100%{ left:77%; top:33%; transform:translate(-50%,-50%) scale(0.55) rotate(-4deg); }
+  }
+  .victoryDragonSvg{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    filter:drop-shadow(0 6px 6px rgba(0,0,0,0.3));
+  }
+  .victoryRider{
+    position:absolute;
+    top:14%;left:44%;
+    width:26px;height:26px;
+  }
+  .victoryRider svg{width:100%;height:100%;display:block;}
+  .victoryTitle{
+    position:absolute;
+    left:0;right:0;bottom:5%;
+    text-align:center;
+    z-index:6;
+    opacity:0;
+    animation:victoryTitleIn .7s ease 3.15s forwards;
+    padding:0 12px;
+  }
+  .victoryTitle h2{
+    margin:0;
+    font-size:clamp(16px,4vw,21px);
+    color:#fff;
+    text-shadow:0 2px 6px rgba(0,0,0,0.6);
+  }
+  .victoryTitle p{
+    margin:4px 0 0;
+    font-size:12px;
+    font-weight:700;
+    color:#fff2df;
+    text-shadow:0 1px 4px rgba(0,0,0,0.6);
+  }
+  .victoryTitle .victoryStats{
+    margin-top:5px;
+    display:inline-block;
+    background:rgba(0,0,0,0.32);
+    border-radius:999px;
+    padding:3px 12px;
+    font-size:11px;
+    color:#ffe9c2;
+  }
+  @keyframes victoryTitleIn{
+    from{opacity:0; transform:translateY(8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .victoryContinueBtn{
+    position:absolute;
+    right:14px;bottom:14px;
+    z-index:7;
+    background:var(--white);
+    color:var(--ink);
+    border:none;
+    padding:8px 16px;
+    border-radius:999px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    box-shadow:0 3px 0 rgba(0,0,0,0.15);
+    opacity:0;
+    animation:victoryTitleIn .5s ease 1.2s forwards;
+  }
+
+  .flightInputRow{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    align-items:center;
+    margin-top:14px;
+  }
+  .flightInput{
+    width:110px;
+    text-align:center;
+    padding:10px 8px;
+    border-radius:12px;
+    border:2px solid var(--parchment-dark);
+    background:var(--white);
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:20px;
+    color:var(--ink);
+  }
+  .flightInput:focus{outline:none;border-color:var(--indigo);}
+  .flightFireBtn{
+    background:linear-gradient(135deg,var(--coral),var(--gold));
+    color:#fff;
+    border:none;
+    padding:12px 22px;
+    border-radius:999px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:16px;
+    cursor:pointer;
+    box-shadow:0 3px 0 rgba(0,0,0,0.15);
+  }
+  .flightFireBtn:active{transform:translateY(2px);box-shadow:none;}
+
+  /* results screen */
+  /* ---------- CUSTOMIZE PANEL ---------- */
+  .customizeLabel{
+    display:block;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:14px 0 6px;
+  }
+  .customizeInput{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:2px solid var(--parchment-dark);
+    background:var(--parchment);
+    font-family:'Nunito',sans-serif;
+    font-size:15px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .customizeInput:focus{outline:none;border-color:var(--indigo);}
+  .swatchRow{display:flex;gap:8px;flex-wrap:wrap;}
+  .swatch{
+    width:32px;height:32px;
+    border-radius:50%;
+    border:3px solid transparent;
+    cursor:pointer;
+    padding:0;
+  }
+  .swatch.selected{border-color:var(--indigo);box-shadow:0 0 0 2px var(--white) inset;}
+  .optionRow{display:flex;gap:8px;flex-wrap:wrap;}
+  .optionBtn{
+    font-family:'Nunito',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    text-transform:capitalize;
+    padding:8px 14px;
+    border-radius:999px;
+    border:2px solid var(--parchment-dark);
+    background:var(--parchment);
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .optionBtn.selected{background:var(--indigo);border-color:var(--indigo);color:#fff;}
+  .saveCustomizeBtn{
+    margin-top:20px;
+    width:100%;
+    background:var(--teal);
+    color:white;
+    border:none;
+    padding:13px;
+    border-radius:999px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    cursor:pointer;
+  }
+
+  .resultsArea{text-align:center;padding:10px 4px;}
+  .resultBlock{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:2px dashed var(--parchment-dark);
+  }
+  .resultBlock:first-of-type{margin-top:10px;}
+  .resultBlockTitle{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:14px;
+    color:var(--ink);
+    margin-bottom:2px;
+  }
+  .muncherNote{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:700;
+    margin-top:6px;
+  }
+  .resultsArea .bigStars{font-size:44px;letter-spacing:6px;margin:10px 0 6px;}
+  .resultsArea p{color:var(--ink-soft);font-weight:700;}
+  .resultsArea button{
+    margin-top:14px;
+    background:var(--teal);
+    color:white;
+    border:none;
+    padding:12px 30px;
+    border-radius:999px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    cursor:pointer;
+  }
+  .xpGainLine{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin-top:10px;
+  }
+  .xpGainBar{
+    width:160px;height:12px;
+    background:var(--parchment-dark);
+    border-radius:999px;
+    overflow:hidden;
+    border:2px solid var(--parchment-dark);
+  }
+  .xpGainFill{
+    height:100%;
+    background:linear-gradient(90deg, var(--teal), var(--amber));
+    width:0%;
+    transition:width 1s ease;
+  }
+  .levelUpBanner{
+    margin-top:12px;
+    background:linear-gradient(90deg, #FFF3D6, #FFE7B3);
+    border:2px solid var(--gold);
+    border-radius:14px;
+    padding:10px 12px;
+    font-weight:800;
+    color:#8a5a12;
+    display:none;
+  }
+  .levelUpBanner.show{display:block;animation:pop .3s ease;}
+
+  footer{
+    text-align:center;
+    color:var(--ink-soft);
+    font-weight:700;
+    font-size:13px;
+    padding:10px 20px 34px;
+  }
+
+  @media (max-width:560px){
+    .islandRow.right, .islandRow.left{justify-content:center;}
+    .island{width:150px;}
+    .islandBlob{width:120px;height:92px;}
+    .islandBlob .num{font-size:26px;}
+    .heroMarker{display:none;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Number<span>lands</span></h1>
+  <p>A math RPG — level up your hero as you travel the Six Kingdoms</p>
+</header>
+
+<div class="layout">
+
+  <!-- ============ CHARACTER CARD ============ -->
+  <div class="heroCard" id="heroCard"></div>
+
+  <!-- ============ MAP ============ -->
+  <div class="mapWrap">
+    <svg class="path" id="pathSvg"></svg>
+    <div class="islands" id="islandsContainer"></div>
+  </div>
+
+</div>
+
+<footer>Built for the Nerdy AI Hackathon Challenge · a K–5 arithmetic RPG</footer>
+
+<div class="overlay" id="overlay">
+  <div class="questPanel" id="questPanel"></div>
+</div>
+
+<script>
+/* ============ ISLAND / CURRICULUM DEFINITION ============ */
+const islands = [
+  {
+    id:'counting-cove', name:'Counting Cove', grade:'K', op:'#', color:'var(--teal)', colorHex:'#2A9D8F',
+    icon:'🐚',
+    generator: (level) => {
+      const max = [5,10,15][level];
+      const n = 1 + Math.floor(Math.random()*max);
+      const emoji = ['🐚','⭐','🐟','🌊'][Math.floor(Math.random()*4)];
+      return {
+        text: 'How many ' + (emoji==='🐚'?'shells':emoji==='⭐'?'stars':emoji==='🐟'?'fish':'waves') + '?',
+        visualHtml: iconGroupHTML(emoji, n),
+        answer: n,
+        choices: makeChoices(n, Math.max(3,max))
+      };
+    },
+    muncher: (level) => {
+      const max = [6,12,18][level];
+      const n = 1 + Math.floor(Math.random()*max);
+      const correctPool = [String(n)];
+      const distractorPool = [];
+      for(let v=0; v<=max+4; v++){ if(v!==n) distractorPool.push(String(v)); }
+      return makeMuncherRound(`Munch every ${n}`, '🦀', correctPool, distractorPool);
+    }
+  },
+  {
+    id:'addsub-bay', name:'Add & Subtract Bay', grade:'1st', op:'+ −', color:'var(--coral)', colorHex:'#E76F51',
+    icon:'⚓',
+    generator: (level) => {
+      const ranges = [10,20,30];
+      const r = ranges[level];
+      const isAdd = Math.random() < 0.55;
+      let a = 1+Math.floor(Math.random()*r);
+      let b = 1+Math.floor(Math.random()*r);
+      if(!isAdd && b>a){ [a,b]=[b,a]; }
+      const answer = isAdd ? a+b : a-b;
+      return {
+        text: `${a} ${isAdd? '+':'−'} ${b} = ?`,
+        answer,
+        choices: makeChoices(answer, Math.max(6,r))
+      };
+    },
+    muncher: (level) => {
+      const ranges = [10,20,30];
+      const r = ranges[level];
+      const T = 1 + Math.floor(Math.random()*r);
+      const correctPool = [];
+      for(let a=0; a<=T; a++){ const b=T-a; if(b>=0 && b<=r) correctPool.push(`${a} + ${b}`); }
+      for(let a=T; a<=T+r; a++){ const b=a-T; correctPool.push(`${a} − ${b}`); }
+      const distractorPool = [];
+      for(let i=0;i<40;i++){
+        const isAdd = Math.random()<0.5;
+        let a=1+Math.floor(Math.random()*r), b=1+Math.floor(Math.random()*r);
+        const val = isAdd ? a+b : (a>=b? a-b : b-a);
+        if(val===T) continue;
+        distractorPool.push(isAdd ? `${a} + ${b}` : (a>=b? `${a} − ${b}` : `${b} − ${a}`));
+      }
+      return makeMuncherRound(`Munch every expression equal to ${T}`, '🐙', correctPool.length?correctPool:[`${T} + 0`], distractorPool);
+    }
+  },
+  {
+    id:'skip-summit', name:'Skip-Count Summit', grade:'2nd', op:'2s 5s 10s', color:'var(--amber)', colorHex:'#F4A340',
+    icon:'⛰️',
+    generator: (level) => {
+      const steps = [2,5,10];
+      const step = steps[level];
+      const start = step*(1+Math.floor(Math.random()*4));
+      const missingIndex = 1+Math.floor(Math.random()*2);
+      const seq = [start, start+step, start+2*step, start+3*step];
+      const answer = seq[missingIndex];
+      const display = seq.map((v,i)=> i===missingIndex? '__' : v).join('  →  ');
+      return {
+        text: `Counting by ${step}s:\n${display}\n\nWhat's missing?`,
+        answer,
+        choices: makeChoices(answer, step*3)
+      };
+    },
+    muncher: (level) => {
+      const steps = [2,5,10];
+      const step = steps[level];
+      const correctPool = [];
+      for(let k=1;k<=12;k++) correctPool.push(String(step*k));
+      const distractorPool = [];
+      for(let v=1; v<=step*13; v++){ if(v%step!==0) distractorPool.push(String(v)); }
+      return makeMuncherRound(`Munch every multiple of ${step}`, '🦅', correctPool, distractorPool);
+    }
+  },
+  {
+    id:'times-trail', name:'Times Table Trail', grade:'3rd', op:'× ÷', color:'var(--indigo)', colorHex:'#5B6EE1',
+    icon:'🧭',
+    generator: (level) => {
+      const maxFactor = [5,8,10][level];
+      const isMul = Math.random() < 0.6;
+      const a = 2+Math.floor(Math.random()*(maxFactor-1));
+      const b = 2+Math.floor(Math.random()*(maxFactor-1));
+      if(isMul){
+        const answer = a*b;
+        return { text:`${a} × ${b} = ?`, answer, choices: makeChoices(answer, maxFactor*maxFactor) };
+      } else {
+        const product = a*b;
+        const answer = a;
+        return { text:`${product} ÷ ${b} = ?`, answer, choices: makeChoices(answer, maxFactor) };
+      }
+    },
+    muncher: (level) => {
+      const maxFactor = [5,8,10][level];
+      const F = 2 + Math.floor(Math.random()*(maxFactor-1));
+      const correctPool = [];
+      for(let k=1;k<=10;k++) correctPool.push(String(F*k));
+      const distractorPool = [];
+      for(let v=1; v<=F*11; v++){ if(v%F!==0) distractorPool.push(String(v)); }
+      return makeMuncherRound(`Munch every multiple of ${F}`, '🐺', correctPool, distractorPool);
+    }
+  },
+  {
+    id:'fraction-forest', name:'Fraction Forest', grade:'4th', op:'½ ¼', color:'var(--plum)', colorHex:'#8E5572',
+    icon:'🌲',
+    generator: (level) => fractionForestGenerator(level),
+    muncher: (level) => {
+      const targets = level===0 ? [[1,2],[1,4],[3,4]]
+                    : level===1 ? [[1,2],[1,3],[2,3],[1,4],[3,4]]
+                    : [[1,2],[1,3],[2,3],[1,4],[3,4],[1,5],[2,5]];
+      const [n,d] = targets[Math.floor(Math.random()*targets.length)];
+      const correctPool = [`${n}/${d}`];
+      for(let m=2;m<=6;m++) correctPool.push(`${n*m}/${d*m}`);
+      const distractorPool = [];
+      [2,3,4,5,6,7,8,9,10].forEach(dd=>{
+        for(let nn=1;nn<dd;nn++){ if(nn*d !== n*dd) distractorPool.push(`${nn}/${dd}`); }
+      });
+      return makeMuncherRound(`Munch every fraction equal to ${n}/${d}`, '🦉', correctPool, distractorPool);
+    }
+  },
+  {
+    id:'mixed-peak', name:'Mixed Operations Peak', grade:'5th', op:'+ − × ÷', color:'var(--teal)', colorHex:'#2A9D8F',
+    icon:'🏔️',
+    generator: (level) => {
+      const ops = ['+','−','×','÷'];
+      const op = ops[Math.floor(Math.random()*ops.length)];
+      const scale = [10,15,20][level];
+      let a,b,answer,text;
+      if(op==='+'){ a=1+Math.floor(Math.random()*scale); b=1+Math.floor(Math.random()*scale); answer=a+b; text=`${a} + ${b} = ?`; }
+      else if(op==='−'){ a=1+Math.floor(Math.random()*scale); b=1+Math.floor(Math.random()*scale); if(b>a)[a,b]=[b,a]; answer=a-b; text=`${a} − ${b} = ?`; }
+      else if(op==='×'){ a=2+Math.floor(Math.random()*9); b=2+Math.floor(Math.random()*9); answer=a*b; text=`${a} × ${b} = ?`; }
+      else { b=2+Math.floor(Math.random()*9); answer=2+Math.floor(Math.random()*9); a=b*answer; text=`${a} ÷ ${b} = ?`; }
+      return { text, answer, choices: makeChoices(answer, scale*2) };
+    },
+    muncher: (level) => {
+      const scale = [10,15,20][level];
+      const ops = ['+','−','×','÷'];
+      const opPick = ops[Math.floor(Math.random()*ops.length)];
+      let T;
+      if(opPick==='×'){ const a=2+Math.floor(Math.random()*9), b=2+Math.floor(Math.random()*9); T=a*b; }
+      else { T = 1 + Math.floor(Math.random()*scale); }
+      const correctPool = [];
+      for(let a=0;a<=T;a++){ correctPool.push(`${a} + ${T-a}`); }
+      for(let a=T;a<=T+scale;a++){ correctPool.push(`${a} − ${a-T}`); }
+      for(let b=1;b<=12;b++){ if(T!==0 && T%b===0){ correctPool.push(`${T/b} × ${b}`); } }
+      for(let b=1;b<=12;b++){ correctPool.push(`${T*b} ÷ ${b}`); }
+      const distractorPool = [];
+      for(let i=0;i<50;i++){
+        const op = ops[Math.floor(Math.random()*ops.length)];
+        let a,b,val,label;
+        if(op==='+'){ a=1+Math.floor(Math.random()*scale*2); b=1+Math.floor(Math.random()*scale*2); val=a+b; label=`${a} + ${b}`; }
+        else if(op==='−'){ a=1+Math.floor(Math.random()*scale*2); b=1+Math.floor(Math.random()*scale*2); if(b>a)[a,b]=[b,a]; val=a-b; label=`${a} − ${b}`; }
+        else if(op==='×'){ a=1+Math.floor(Math.random()*12); b=1+Math.floor(Math.random()*12); val=a*b; label=`${a} × ${b}`; }
+        else { b=1+Math.floor(Math.random()*12); a=b*(1+Math.floor(Math.random()*12)); val=a/b; label=`${a} ÷ ${b}`; }
+        if(val===T) continue;
+        distractorPool.push(label);
+      }
+      return makeMuncherRound(`Munch every expression equal to ${T}`, '🐉', correctPool, distractorPool);
+    }
+  }
+];
+
+const QUESTIONS_PER_QUEST = 6;
+const STARS_TO_UNLOCK = 2; // stars needed on an island to unlock the next
+const STORAGE_KEY = 'numberlands-rpg-save';
+
+/* ============ NUMBER MUNCHER CONFIG ============ */
+const MUNCHER_COLS = 6;
+const MUNCHER_ROWS = 5;
+const MUNCHER_TOTAL = MUNCHER_COLS * MUNCHER_ROWS;
+const MUNCHER_CORRECT_COUNT = 6;
+const MUNCHER_LIVES = 4;
+const MUNCHER_TICK_MS = 750;
+
+/* ============ DRAGON RIDER SHOWDOWN CONFIG (final boss) ============ */
+const BOSS_LANES = 4;
+const BOSS_LIVES = 4;
+const BOSS_TARGET_CORRECT = 12;   // correct blasts needed to win the showdown
+const BOSS_DRAGON_X = 9;          // percent-of-arena-width position of the dragon's mouth
+const BOSS_SPAWN_X = 96;          // percent-of-arena-width where answer targets spawn
+const BOSS_HIT_RADIUS = 4;        // percent distance counted as a fireball hit
+const BOSS_FIREBALL_SPEED = 150;  // percent of arena width per second
+const BOSS_BASE_SPEED = 8;        // percent of arena width per second (target drift speed)
+const BOSS_SPEED_STEP = 0.5;      // speed increase per correct hit (difficulty ramp)
+
+const FLIGHT_LIVES = 4;
+const FLIGHT_TARGET_CORRECT = 12;
+const FLIGHT_DEBRIS_COUNT = 4;
+const FLIGHT_HIT_DEPTH = 100;      // depth at which debris reaches the dragon
+const FLIGHT_BASE_SPEED = 17;      // depth units per second (slowed down for a calmer approach)
+const FLIGHT_SPEED_STEP = 0.9;     // speed increase per correct hit
+const FLIGHT_FLAME_MS = 220;       // fire-breath travel animation duration
+
+/* ============ RPG CONFIG ============ */
+// Gear unlocks by hero level. Each entry appears in the hero's gear row as soon
+// as the level is reached, and layers onto the avatar SVG.
+const GEAR_TABLE = [
+  { level:2, slot:'hat',       icon:'⛑️', name:'Knight\'s Helmet' },
+  { level:3, slot:'weapon',    icon:'🗡️', name:'Counting Blade' },
+  { level:4, slot:'pet',       icon:'🐉', name:'Baby Dragon' },
+  { level:5, slot:'shield',    icon:'🛡️', name:'Guardian Shield' },
+  { level:6, slot:'crown',     icon:'👑', name:'Kingdom Crown' },
+];
+function xpToReachLevel(level){ // total xp needed to go from level 1 to `level`
+  let total = 0;
+  for(let l=1;l<level;l++) total += 80 + (l-1)*30;
+  return total;
+}
+function xpForLevel(level){ return 80 + (level-1)*30; } // xp needed to go from `level` to `level+1`
+
+/* ============ HERO CUSTOMIZATION OPTIONS ============ */
+const SKIN_TONES = ['#E8B894','#C68863','#8D5524','#F1C27D','#FFDBAC','#A9714A','#7FDBDB','#B98FE0','#8FD6A3','#F2A6C9','#E0E0E0','#9FB8E8'];
+const HAIR_COLORS = ['#2C1B12','#5C3B21','#8B5A2B','#1A1A1A','#4A3728','#B8860B','#00CED1','#8A2BE2','#FF6FB5','#3CB371','#E63946','#D4D4E0'];
+const HAIR_STYLES = ['short','curly','long','bun'];
+const TUNIC_COLORS = ['#2A9D8F','#5B6EE1','#E76F51','#8E5572'];
+
+/* ============ STATE ============ */
+const state = {
+  stars: {},
+  muncherStars: {},
+  adaptiveLevel: {},
+  hero: { name:'Nova', totalXp: 0, skin:0, hairColor:0, hairStyle:0, tunic:0 },
+  bossStars: 0,
+  bossBestHits: 0,
+  flightStars: 0,
+  flightBestHits: 0,
+  flightBeaten: false
+};
+islands.forEach(isl => { state.stars[isl.id]=0; state.muncherStars[isl.id]=0; state.adaptiveLevel[isl.id]=0; });
+
+let activeQuest = null;
+let activeMuncher = null;
+let activeBoss = null;
+let activeFlight = null;
+let saveTimer;
+
+function heroLevel(){
+  let level = 1;
+  while(state.hero.totalXp >= xpToReachLevel(level+1)) level++;
+  return level;
+}
+function heroXpIntoLevel(){
+  const level = heroLevel();
+  return state.hero.totalXp - xpToReachLevel(level);
+}
+function heroXpNeeded(){
+  return xpForLevel(heroLevel());
+}
+function unlockedGear(level){
+  return GEAR_TABLE.filter(g => g.level <= level);
+}
+
+/* ============ PERSISTENCE ============ */
+async function saveState(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+      const tag = document.getElementById('saveTag');
+      if(tag){ tag.classList.add('show'); setTimeout(()=>tag.classList.remove('show'), 900); }
+    }catch(e){}
+  }, 350);
+}
+async function loadState(){
+  try{
+    const r = await window.storage.get(STORAGE_KEY, false);
+    if(r && r.value){
+      const loaded = JSON.parse(r.value);
+      Object.assign(state.stars, loaded.stars || {});
+      Object.assign(state.muncherStars, loaded.muncherStars || {});
+      Object.assign(state.adaptiveLevel, loaded.adaptiveLevel || {});
+      if(loaded.hero) Object.assign(state.hero, loaded.hero);
+      if(typeof loaded.bossStars === 'number') state.bossStars = loaded.bossStars;
+      if(typeof loaded.bossBestHits === 'number') state.bossBestHits = loaded.bossBestHits;
+      if(typeof loaded.flightStars === 'number') state.flightStars = loaded.flightStars;
+      if(typeof loaded.flightBestHits === 'number') state.flightBestHits = loaded.flightBestHits;
+      if(typeof loaded.flightBeaten === 'boolean') state.flightBeaten = loaded.flightBeaten;
+      else if(state.flightStars >= 1) state.flightBeaten = true; // older saves: infer from existing stars
+    }
+  }catch(e){}
+}
+
+/* ============ AVATAR (procedural, gear-aware, chibi style) ============ */
+// A bigger-headed, big-eyed "chibi" build reads much better for K-5 players
+// than a realistically-proportioned figure — it's friendlier, easier to tell
+// apart from across the room, and gear (helmet, crown, shield...) has more
+// room to sit clearly instead of crowding a small head.
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0}return h}
+function avatarSVG(name, level, size){
+  size = size || 76;
+  const skin = SKIN_TONES[state.hero.skin % SKIN_TONES.length];
+  const hairColor = HAIR_COLORS[state.hero.hairColor % HAIR_COLORS.length];
+  const hairStyleKey = HAIR_STYLES[state.hero.hairStyle % HAIR_STYLES.length];
+  const tunic = TUNIC_COLORS[state.hero.tunic % TUNIC_COLORS.length];
+  const gear = unlockedGear(level);
+  const has = slot => gear.some(g => g.slot === slot);
+
+  let layers = '';
+
+  // arms are computed first so gear (shield/weapon) can anchor to the hands
+  const leftShoulder = {x:16, y:47};
+  const rightShoulder = {x:48, y:47};
+  const leftHand  = has('shield') ? {x:9,  y:39} : {x:12, y:58};
+  const rightHand = has('weapon') ? {x:55, y:41} : {x:52, y:58};
+
+  // little boots peeking out from under the tunic
+  layers += `<ellipse cx="24" cy="61.5" rx="5.6" ry="3.2" fill="#6b4a2f"/>`;
+  layers += `<ellipse cx="40" cy="61.5" rx="5.6" ry="3.2" fill="#6b4a2f"/>`;
+
+  // body / tunic, with a soft collar and a little star badge for personality
+  layers += `<ellipse cx="32" cy="52" rx="17.5" ry="13.5" fill="${tunic}" stroke="#3D2B1F" stroke-width="1.3" stroke-opacity="0.18"/>`;
+  layers += `<path d="M25 41.5 Q32 46.5 39 41.5" stroke="#3D2B1F" stroke-width="1.2" fill="none" stroke-opacity="0.18" stroke-linecap="round"/>`;
+  layers += `<path d="M32 48.3 L33.2 51.1 36.2 51.4 34 53.4 34.6 56.3 32 54.8 29.4 56.3 30 53.4 27.8 51.4 30.8 51.1 Z" fill="#D9A441"/>`;
+
+  // arms (sleeves) + hands, resting by default or raised to grip shield/weapon
+  layers += `<path d="M${leftShoulder.x} ${leftShoulder.y} Q${leftShoulder.x-6} ${(leftShoulder.y+leftHand.y)/2} ${leftHand.x} ${leftHand.y}" stroke="${tunic}" stroke-width="9.5" fill="none" stroke-linecap="round"/>`;
+  layers += `<path d="M${rightShoulder.x} ${rightShoulder.y} Q${rightShoulder.x+6} ${(rightShoulder.y+rightHand.y)/2} ${rightHand.x} ${rightHand.y}" stroke="${tunic}" stroke-width="9.5" fill="none" stroke-linecap="round"/>`;
+  layers += `<circle cx="${leftHand.x}" cy="${leftHand.y}" r="5" fill="${skin}"/>`;
+  layers += `<circle cx="${rightHand.x}" cy="${rightHand.y}" r="5" fill="${skin}"/>`;
+
+  // big chibi head + ears
+  layers += `<circle cx="32" cy="27" r="18" fill="${skin}"/>`;
+  layers += `<ellipse cx="14.3" cy="28" rx="2.6" ry="3.6" fill="${skin}"/>`;
+  layers += `<ellipse cx="49.7" cy="28" rx="2.6" ry="3.6" fill="${skin}"/>`;
+
+  // rosy cheeks
+  layers += `<ellipse cx="19.5" cy="34.5" rx="3.6" ry="2.1" fill="#FF97A8" opacity="0.55"/>`;
+  layers += `<ellipse cx="44.5" cy="34.5" rx="3.6" ry="2.1" fill="#FF97A8" opacity="0.55"/>`;
+
+  // big, sparkly eyes — the main thing that makes the hero feel friendly
+  [-7, 7].forEach(dx => {
+    const ex = 32 + dx;
+    layers += `<ellipse cx="${ex}" cy="27.5" rx="4.9" ry="5.7" fill="#fff" stroke="#3a2a20" stroke-width="1"/>`;
+    layers += `<circle cx="${ex + (dx < 0 ? 0.6 : -0.6)}" cy="29" r="2.9" fill="#3a2a20"/>`;
+    layers += `<circle cx="${ex + (dx < 0 ? -0.7 : 0.4)}" cy="27" r="1.15" fill="#fff"/>`;
+  });
+
+  // smile
+  layers += `<path d="M27.5 36.5 Q32 40.5 36.5 36.5" stroke="#3a2a20" stroke-width="1.7" fill="none" stroke-linecap="round"/>`;
+
+  // hair (drawn before hat/crown so those sit on top) — style set by customization
+  let hairSvg = '';
+  if(hairStyleKey === 'short'){
+    hairSvg = `<path d="M12.5 25.5 Q32 3 51.5 25.5 L51.5 15 Q32 -3 12.5 15 Z" fill="${hairColor}"/>`;
+  } else if(hairStyleKey === 'curly'){
+    hairSvg = `<circle cx="20.5" cy="16.5" r="7.6" fill="${hairColor}"/><circle cx="32" cy="8.5" r="8.6" fill="${hairColor}"/><circle cx="43.5" cy="16.5" r="7.6" fill="${hairColor}"/>`;
+  } else if(hairStyleKey === 'long'){
+    // full cap (so there's no gap at the crown) plus two side locks trailing
+    // down past the ears to the shoulders
+    hairSvg = `<path d="M12.5 25.5 Q32 3 51.5 25.5 L51.5 15 Q32 -3 12.5 15 Z" fill="${hairColor}"/>`;
+    hairSvg += `<path d="M12 24 Q8 37 12 50 Q16.5 48.5 17.5 41.5 Q15 30 17.5 20.5 Z" fill="${hairColor}"/>`;
+    hairSvg += `<path d="M52 24 Q56 37 52 50 Q47.5 48.5 46.5 41.5 Q49 30 46.5 20.5 Z" fill="${hairColor}"/>`;
+  } else {
+    hairSvg = `<path d="M12.5 25.5 Q32 4 51.5 25.5 L51.5 15 Q32 -2 12.5 15 Z" fill="${hairColor}"/><circle cx="32" cy="0.5" r="6.2" fill="${hairColor}"/>`;
+  }
+  // The knight's helmet is a full dome that encloses the whole head, so hair
+  // is hidden underneath it rather than poking out around the edges (the
+  // open-pointed crown doesn't fully enclose, so hair still shows under it).
+  const helmetCovers = has('hat') && !has('crown');
+  if(!helmetCovers) layers += hairSvg;
+
+  // weapon (an enchanted sword gripped by the raised right hand, anchored to
+  // the hand so it follows the arm's angle outward) — a winged golden guard,
+  // an indigo-wrapped grip, and a pulsing neon-blue glow along the blade for
+  // that "magic weapon" feel
+  if(has('weapon')){
+    layers += `<g transform="translate(${rightHand.x},${rightHand.y}) rotate(22)">
+      <circle cx="0" cy="-16" r="8" fill="#4FE0FF" opacity="0.28">
+        <animate attributeName="opacity" values="0.2;0.42;0.2" dur="1.8s" repeatCount="indefinite"/>
+        <animate attributeName="r" values="7;9;7" dur="1.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="0" cy="-16" r="4.5" fill="#B9F5FF" opacity="0.4">
+        <animate attributeName="opacity" values="0.3;0.6;0.3" dur="1.8s" repeatCount="indefinite"/>
+      </circle>
+      <path d="M-2.1 0.5 L-2.1 -13 L0 -19.5 L2.1 -13 L2.1 0.5 Z" fill="none" stroke="#33D8FF" stroke-width="5.5" opacity="0.22" stroke-linejoin="round">
+        <animate attributeName="opacity" values="0.15;0.32;0.15" dur="1.8s" repeatCount="indefinite"/>
+      </path>
+      <path d="M-2.1 0.5 L-2.1 -13 L0 -19.5 L2.1 -13 L2.1 0.5 Z" fill="none" stroke="#33D8FF" stroke-width="3" opacity="0.4" stroke-linejoin="round"/>
+      <path d="M-2.1 0.5 L-2.1 -13 L0 -19.5 L2.1 -13 L2.1 0.5 Z" fill="#EAF7FF" stroke="#33D8FF" stroke-width="0.9" stroke-linejoin="round"/>
+      <path d="M-0.5 -1 L-0.5 -13.5 L0 -17 L0.5 -13.5 L0.5 -1 Z" fill="#7FE9FF" opacity="0.85"/>
+      <path d="M-7.8 1.4 Q-4.2 -1.8 -2.1 0.5 L2.1 0.5 Q4.2 -1.8 7.8 1.4 Q4.5 3.6 2.1 1.7 L-2.1 1.7 Q-4.5 3.6 -7.8 1.4 Z" fill="#F4C453" stroke="#8a5a12" stroke-width="0.7"/>
+      <circle cx="0" cy="1" r="1.4" fill="#8a5a12"/>
+      <rect x="-1.5" y="1.7" width="3" height="6.6" rx="1.3" fill="#5B6EE1"/>
+      <path d="M-1.5 3.6 L1.5 3.6 M-1.5 5.7 L1.5 5.7" stroke="#3d4dab" stroke-width="0.6"/>
+      <circle cx="0" cy="9" r="2" fill="#D9A441" stroke="#8a5a12" stroke-width="0.6"/>
+      <circle cx="-0.5" cy="8.4" r="0.6" fill="#fff" opacity="0.85"/>
+    </g>`;
+  }
+
+  // hat / crown (crown replaces the helmet visually if both are unlocked) —
+  // both sit above the eyebrows so the whole face stays visible underneath
+  if(has('crown')){
+    layers += `<path d="M14.5 19 L20 6.5 L27 15 L32 3.5 L37 15 L44 6.5 L49.5 19 Z" fill="#FFD766" stroke="#B8860B" stroke-width="1.3"/><circle cx="32" cy="3.5" r="2.5" fill="#E76F51"/><circle cx="20" cy="9" r="1.7" fill="#5B6EE1"/><circle cx="44" cy="9" r="1.7" fill="#5B6EE1"/>`;
+  } else if(has('hat')){
+    // open-face knight helmet: dome + rim above the eyebrows, cheek flaps
+    // trailing down alongside the jaw, and a small plume on top
+    layers += `<path d="M13 20.5 Q32 0.5 51 20.5 L51 24 Q32 19.5 13 24 Z" fill="#D7DCE3" stroke="#8a8f99" stroke-width="1.3"/>`;
+    layers += `<ellipse cx="32" cy="23.2" rx="19.5" ry="2.7" fill="#AEB4BE"/>`;
+    layers += `<path d="M13 24 Q10 33 14 41.5 L19.3 39.3 Q16.3 32 16.8 24.5 Z" fill="#D7DCE3" stroke="#8a8f99" stroke-width="1.3"/>`;
+    layers += `<path d="M51 24 Q54 33 50 41.5 L44.7 39.3 Q47.7 32 47.2 24.5 Z" fill="#D7DCE3" stroke="#8a8f99" stroke-width="1.3"/>`;
+    layers += `<path d="M30 0.5 Q32 -5.5 34 0.5 L33 9.5 L31 9.5 Z" fill="#E76F51"/>`;
+  }
+
+  // shield (held up by the raised left hand)
+  if(has('shield')){
+    layers += `<g transform="translate(${leftHand.x},${leftHand.y})">
+      <path d="M0 -10.5 L8.2 -6.8 L8.2 3.2 Q8.2 12.5 0 16.2 Q-8.2 12.5 -8.2 3.2 L-8.2 -6.8 Z" fill="#C9CFDA" stroke="#5a5f68" stroke-width="1.4"/>
+      <path d="M0 -6.3 L0 10.5 M-4.7 2.1 L4.7 2.1" stroke="#D9A441" stroke-width="1.6" stroke-linecap="round"/>
+    </g>`;
+  }
+
+  // baby dragon companion — flies in a little circling loop over the hero's
+  // upper-left shoulder. Bold, simplified shapes and a thick outline keep it
+  // reading clearly as a dragon even at the small hero-card/marker sizes,
+  // where fine detail just disappears. A hover-bob and wing flap keep it
+  // feeling alive in flight.
+  if(has('pet')){
+    layers += `<g transform="translate(11,13) rotate(-12) scale(1.15)">
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0,0; 0,-1.8; 0,0" dur="1.6s" repeatCount="indefinite"/>
+        <path d="M-9 2 Q-15 5 -13 -1 Q-10 -3 -8 0 Z" fill="#3FBE72" stroke="#1f4d33" stroke-width="1.1" stroke-linejoin="round"/>
+        <path d="M-3 -3 Q-9 -12 -14 -9 Q-11 -3 -6 -1 Z" fill="#3FBE72" stroke="#1f4d33" stroke-width="1.1" stroke-linejoin="round">
+          <animateTransform attributeName="transform" type="rotate" values="0 -3 -3;10 -3 -3;0 -3 -3" dur="0.9s" repeatCount="indefinite"/>
+        </path>
+        <ellipse cx="0" cy="0" rx="8" ry="5.6" fill="#57DE8C" stroke="#1f4d33" stroke-width="1.2"/>
+        <ellipse cx="0.5" cy="2.3" rx="4.6" ry="2.7" fill="#EAFBF0"/>
+        <path d="M-3.6 -4.3 L-2.6 -7.4 L-0.9 -4.7 Z" fill="#1f4d33"/>
+        <path d="M0 -4.9 L1.2 -8 L2.8 -4.9 Z" fill="#1f4d33"/>
+        <path d="M-1 -3.5 Q4 -13 10 -10 Q7 -4 4 -1 Z" fill="#57DE8C" stroke="#1f4d33" stroke-width="1.1" stroke-linejoin="round">
+          <animateTransform attributeName="transform" type="rotate" values="0 -1 -3.5;-14 -1 -3.5;0 -1 -3.5" dur="0.9s" repeatCount="indefinite"/>
+        </path>
+        <circle cx="9" cy="-2.3" r="5.4" fill="#57DE8C" stroke="#1f4d33" stroke-width="1.2"/>
+        <path d="M6 -6.6 L5.6 -9.8 L8.2 -7 Z" fill="#F7C948" stroke="#8a5a12" stroke-width="0.7"/>
+        <path d="M9.4 -7.3 L9.6 -10.5 L11.6 -7.4 Z" fill="#F7C948" stroke="#8a5a12" stroke-width="0.7"/>
+        <ellipse cx="13.2" cy="-0.6" rx="2.9" ry="2.3" fill="#EAFBF0" stroke="#1f4d33" stroke-width="0.9"/>
+        <circle cx="14" cy="-1.1" r="0.55" fill="#1f4d33"/>
+        <circle cx="13" cy="0.3" r="0.55" fill="#1f4d33"/>
+        <circle cx="9.8" cy="-3.5" r="2.9" fill="#fff" stroke="#1f4d33" stroke-width="0.9"/>
+        <circle cx="10.4" cy="-2.9" r="1.7" fill="#1f2b26"/>
+        <circle cx="9.6" cy="-3.8" r="0.6" fill="#fff"/>
+        <ellipse cx="7.6" cy="1" rx="1.6" ry="1" fill="#FF8FA3" opacity="0.6"/>
+      </g>
+    </g>`;
+  }
+
+  return `<svg viewBox="0 0 64 64" width="${size}" height="${size}">
+    <circle cx="32" cy="32" r="32" fill="#FBF3E4"/>
+    <circle cx="32" cy="32" r="31" fill="none" stroke="${tunic}" stroke-width="2" opacity="0.35"/>
+    ${layers}
+  </svg>`;
+}
+
+/* ============ CHARACTER CARD RENDER ============ */
+/* ============ RESET PROGRESS ============ */
+function defaultState(){
+  const fresh = {
+    stars: {},
+    muncherStars: {},
+    adaptiveLevel: {},
+    hero: { name:'Nova', totalXp: 0, skin:0, hairColor:0, hairStyle:0, tunic:0 },
+    bossStars: 0,
+    bossBestHits: 0,
+    flightStars: 0,
+    flightBestHits: 0,
+    flightBeaten: false
+  };
+  islands.forEach(isl => { fresh.stars[isl.id]=0; fresh.muncherStars[isl.id]=0; fresh.adaptiveLevel[isl.id]=0; });
+  return fresh;
+}
+let resetPending = false;
+async function resetProgress(){
+  clearTimeout(saveTimer);
+  Object.assign(state, defaultState());
+  try{ await window.storage.delete(STORAGE_KEY, false); }catch(e){}
+  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state), false); }catch(e){}
+  resetPending = false;
+  renderMap();
+  const tag = document.getElementById('saveTag');
+  if(tag){ tag.classList.add('show'); setTimeout(()=>tag.classList.remove('show'), 900); }
+}
+function requestResetProgress(){
+  resetPending = true;
+  renderHeroCard();
+}
+function cancelResetProgress(){
+  resetPending = false;
+  renderHeroCard();
+}
+
+function renderHeroCard(prevLevel){
+  const level = heroLevel();
+  const xpIn = heroXpIntoLevel();
+  const xpNeed = heroXpNeeded();
+  const pct = Math.min(100, Math.round((xpIn/xpNeed)*100));
+  const totalStars = Object.values(state.stars).reduce((a,b)=>a+b,0);
+  const kingdomsCleared = Object.values(state.stars).filter(s=>s>=STARS_TO_UNLOCK).length;
+
+  const slots = GEAR_TABLE.map(g => {
+    const unlocked = level >= g.level;
+    return `<div class="gearSlot ${unlocked?'unlocked':''}" title="${unlocked ? g.name : g.name+' — unlocks at Level '+g.level}">
+      <span class="gearIcon ${unlocked?'':'gearIconLocked'}">${g.icon}</span>
+      ${unlocked ? '' : `<span class="lockDot">🔒</span>`}
+    </div>`;
+  }).join('');
+
+  document.getElementById('heroCard').innerHTML = `
+    <div class="heroTop">
+      <div class="heroAvatarWrap">
+        ${avatarSVG(state.hero.name, level, 76)}
+        <div class="heroLevelBadge">Lv ${level}</div>
+      </div>
+      <div>
+        <p class="heroName">${state.hero.name}</p>
+        <div class="heroTitle">${heroTitleFor(level)}</div>
+        <button class="editHeroBtn" onclick="openCustomize()">✏️ Customize</button>
+      </div>
+    </div>
+    <div class="xpTrack">
+      <div class="xpLabel"><span>XP</span><span>${xpIn} / ${xpNeed}</span></div>
+      <div class="xpBar"><div class="xpFill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="gearRow">${slots}</div>
+    <div class="heroStats">
+      <div class="heroStat"><div class="n">${totalStars}</div><div class="l">Stars</div></div>
+      <div class="heroStat"><div class="n">${kingdomsCleared}/${islands.length}</div><div class="l">Kingdoms</div></div>
+      <div class="heroStat"><div class="n">${state.bossStars}/3</div><div class="l">🐉 Showdown</div></div>
+      <div class="heroStat"><div class="n">${state.flightStars}/3</div><div class="l">🔥 Skyfire</div></div>
+    </div>
+    <div class="heroNote">Quiz your way through each kingdom to earn XP and unlock new gear — Number Muncher boards are for practice and don't award prizes.</div>
+    <div class="heroFooterRow">
+      ${resetPending ? `
+        <span class="resetConfirmText">Reset everything?</span>
+        <div class="resetConfirmBtns">
+          <button class="resetBtn resetBtnDanger" onclick="resetProgress()">Yes, reset</button>
+          <button class="resetBtn" onclick="cancelResetProgress()">Cancel</button>
+        </div>
+      ` : `
+        <span class="saveTag" id="saveTag">saved</span>
+        <button class="resetBtn" onclick="requestResetProgress()">⟲ Reset progress</button>
+      `}
+    </div>
+  `;
+}
+function heroTitleFor(level){
+  if(level >= 6) return 'Crowned Champion of Numberlands';
+  if(level >= 5) return 'Kingdom Explorer';
+  if(level >= 4) return 'Traveling Scholar';
+  if(level >= 3) return 'Apprentice Adventurer';
+  if(level >= 2) return 'Fledgling Adventurer';
+  return 'Newcomer';
+}
+
+/* ============ HERO CUSTOMIZATION PANEL ============ */
+function openCustomize(){
+  document.getElementById('overlay').classList.add('show');
+  renderCustomizePanel();
+}
+function closeCustomizePanel(){
+  saveState();
+  document.getElementById('overlay').classList.remove('show');
+  renderMap();
+}
+function setCustom(field, value){
+  state.hero[field] = value;
+  renderCustomizePanel();
+  saveState();
+}
+function renderCustomizePanel(){
+  const panel = document.getElementById('questPanel');
+  panel.classList.remove('muncherActive');
+  panel.classList.remove('bossActive');
+  const level = heroLevel();
+  const swatchBtn = (color, selected, field, i) =>
+    `<button class="swatch ${selected?'selected':''}" style="background:${color}" onclick="setCustom('${field}',${i})" aria-label="option ${i+1}"></button>`;
+
+  panel.innerHTML = `
+    <button class="closeBtn" onclick="closeCustomizePanel()">✕</button>
+    <h2 style="text-align:center;margin:0 0 4px;">Customize Your Hero</h2>
+    <div style="display:flex;justify-content:center;margin:10px 0 6px;" id="customizePreview">${avatarSVG(state.hero.name, level, 92)}</div>
+
+    <label class="customizeLabel">Name</label>
+    <input id="customizeName" class="customizeInput" maxlength="16" value="${state.hero.name}">
+
+    <label class="customizeLabel">Skin tone</label>
+    <div class="swatchRow">${SKIN_TONES.map((c,i)=>swatchBtn(c, state.hero.skin===i, 'skin', i)).join('')}</div>
+
+    <label class="customizeLabel">Hair style</label>
+    <div class="optionRow">${HAIR_STYLES.map((s,i)=>`<button class="optionBtn ${state.hero.hairStyle===i?'selected':''}" onclick="setCustom('hairStyle',${i})">${s}</button>`).join('')}</div>
+
+    <label class="customizeLabel">Hair color</label>
+    <div class="swatchRow">${HAIR_COLORS.map((c,i)=>swatchBtn(c, state.hero.hairColor===i, 'hairColor', i)).join('')}</div>
+
+    <label class="customizeLabel">Outfit color</label>
+    <div class="swatchRow">${TUNIC_COLORS.map((c,i)=>swatchBtn(c, state.hero.tunic===i, 'tunic', i)).join('')}</div>
+
+    <button class="saveCustomizeBtn" onclick="closeCustomizePanel()">Done</button>
+  `;
+
+  const nameInput = document.getElementById('customizeName');
+  nameInput.addEventListener('input', (e) => {
+    state.hero.name = e.target.value.trim() || 'Adventurer';
+    const preview = document.getElementById('customizePreview');
+    if(preview) preview.innerHTML = avatarSVG(state.hero.name, level, 92);
+  });
+  nameInput.addEventListener('blur', () => saveState());
+}
+
+/* ============ FRACTION FOREST (rich generator) ============ */
+function pieSVG(numerator, denominator, fillColor){
+  const size = 130, cx = size/2, cy = size/2, r = size/2 - 6;
+  let paths = '';
+  const anglePer = (2*Math.PI)/denominator;
+  for(let i=0;i<denominator;i++){
+    const start = -Math.PI/2 + i*anglePer;
+    const end = start + anglePer;
+    const x1 = cx + r*Math.cos(start), y1 = cy + r*Math.sin(start);
+    const x2 = cx + r*Math.cos(end), y2 = cy + r*Math.sin(end);
+    const largeArc = anglePer > Math.PI ? 1 : 0;
+    const fill = i < numerator ? fillColor : '#F1E9D6';
+    paths += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${fill}" stroke="#3D2B1F" stroke-width="2"/>`;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>`;
+}
+function barSVG(numerator, denominator, fillColor){
+  const width = 220, height = 46;
+  const segW = width/denominator;
+  let rects = '';
+  for(let i=0;i<denominator;i++){
+    const fill = i < numerator ? fillColor : '#F1E9D6';
+    rects += `<rect x="${i*segW}" y="0" width="${segW}" height="${height}" fill="${fill}" stroke="#3D2B1F" stroke-width="2"/>`;
+  }
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${rects}</svg>`;
+}
+function iconGroupHTML(emoji, n){
+  // Bounded, wrapping grid so counts up to ~15 always fit on screen without scrolling.
+  const size = n <= 6 ? 34 : n <= 10 ? 28 : 22;
+  let out = `<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:280px;margin:0 auto;">`;
+  for(let i=0;i<n;i++){
+    out += `<span style="font-size:${size}px;line-height:1;">${emoji}</span>`;
+  }
+  out += '</div>';
+  return out;
+}
+function treeGroupHTML(total, highlightedCount){
+  let out = '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:260px;margin:0 auto;">';
+  for(let i=0;i<total;i++){
+    const harvested = i < highlightedCount;
+    out += `<span style="font-size:26px;filter:${harvested? 'none':'grayscale(0)'};opacity:${harvested? '1':'0.45'}">🌲</span>`;
+  }
+  out += '</div>';
+  return out;
+}
+function fractionForestGenerator(level){
+  const rand = Math.random();
+
+  if(level === 0 || (level === 1 && rand < 0.5)){
+    const dens = level === 0 ? [2,4] : [3,6,8];
+    const d = dens[Math.floor(Math.random()*dens.length)];
+    const n = 1 + Math.floor(Math.random()*(d-1));
+    const visual = pieSVG(n, d, '#2A9D8F');
+    return {
+      text: `What fraction of the pie is green?\n(out of ${d} slices)`,
+      visualHtml: visual,
+      answer: n,
+      choices: makeChoices(n, d).filter(c => c>=0 && c<=d)
+    };
+  }
+
+  if(level === 1 || (level === 2 && rand < 0.5)){
+    const pairs = level === 1
+      ? [[1,2,4],[1,2,6],[2,4,8],[1,4,8]]
+      : [[1,3,6],[2,3,6],[1,3,9],[2,3,9],[3,4,8],[1,2,10]];
+    const [n,d,targetD] = pairs[Math.floor(Math.random()*pairs.length)];
+    const answer = Math.round(n * (targetD/d));
+    const visual = `
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+        ${barSVG(n,d,'#5B6EE1')}
+        <div style="font-weight:800;color:var(--ink-soft);font-size:14px;">= ? out of ${targetD}</div>
+      </div>`;
+    return {
+      text: `This bar shows ${n}/${d}.\nHow many of ${targetD} equal parts would be shaded to match?`,
+      visualHtml: visual,
+      answer,
+      choices: makeChoices(answer, targetD).filter(c => c>=0 && c<=targetD)
+    };
+  }
+
+  const groupOptions = [
+    {total:8, frac:[1,2,1,4,3,4]}, {total:12,frac:[1,3,2,3,3,4,1,4]}, {total:16,frac:[3,4,1,2,1,4]}, {total:9,frac:[2,3,1,3]}
+  ];
+  const opt = groupOptions[Math.floor(Math.random()*groupOptions.length)];
+  const fracArr = opt.frac;
+  const pick = Math.floor(Math.random()/1 * (fracArr.length/2)) * 2;
+  const n = fracArr[pick], d = fracArr[pick+1];
+  const answer = (opt.total/d)*n;
+  const visual = treeGroupHTML(opt.total, answer);
+  return {
+    text: `A ranger planted ${opt.total} trees.\n${n}/${d} of them have grown tall (highlighted).\nHow many trees is that?`,
+    visualHtml: visual,
+    answer,
+    choices: makeChoices(answer, opt.total).filter(c => c>=0 && c<=opt.total)
+  };
+}
+
+/* ============ HELPERS ============ */
+function makeChoices(answer, spread){
+  const set = new Set([answer]);
+  let guard = 0;
+  while(set.size < 4 && guard < 200){
+    guard++;
+    const delta = Math.floor(Math.random()*Math.max(3,Math.floor(spread*0.3))) + 1;
+    const candidate = Math.random()<0.5 ? answer+delta : answer-delta;
+    if(candidate>=0 && Number.isFinite(candidate)) set.add(candidate);
+  }
+  // Fallback in case answer/spread were malformed (e.g. NaN) and the loop
+  // above couldn't fill out 4 distinct valid choices — never leave the
+  // player without a full set of options.
+  let filler = 0;
+  while(set.size < 4){ set.add((Number.isFinite(answer) ? answer : 0) + 1000 + filler); filler++; }
+  return shuffle([...set]);
+}
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function muncherNeighbors(r,c){
+  return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]]
+    .filter(([nr,nc]) => nr>=0 && nr<MUNCHER_ROWS && nc>=0 && nc<MUNCHER_COLS);
+}
+// Random self-avoiding walk (with backtracking) starting adjacent to the hero's
+// home tile (0,0). Every cell in the returned path is 4-directionally adjacent
+// to the one before it, so a correct answer is always placed right next to
+// wherever the hero currently stands.
+function buildMuncherPath(correctCount){
+  const visited = new Set(['0,0']);
+  const path = [];
+  function dfs(r,c){
+    if(path.length === correctCount) return true;
+    const options = shuffle(muncherNeighbors(r,c)).filter(([nr,nc]) => !visited.has(`${nr},${nc}`));
+    for(const [nr,nc] of options){
+      const key = `${nr},${nc}`;
+      visited.add(key);
+      path.push({r:nr,c:nc});
+      if(dfs(nr,nc)) return true;
+      path.pop();
+      visited.delete(key);
+    }
+    return false;
+  }
+  dfs(0,0);
+  return path;
+}
+// Places the enemy as far as possible from both the hero's home tile and every
+// safe-path cell, so it never starts on top of a correct answer the hero needs
+// to reach.
+function pickEnemySpawn(pathSet){
+  let best = null;
+  for(let r=0;r<MUNCHER_ROWS;r++){
+    for(let c=0;c<MUNCHER_COLS;c++){
+      if((r===0&&c===0) || pathSet.has(`${r},${c}`)) continue;
+      const dist = r + c;
+      if(!best || dist > best.dist) best = {r,c,dist};
+    }
+  }
+  return best || { r: MUNCHER_ROWS-1, c: MUNCHER_COLS-1 };
+}
+function buildMuncherCells(correctPool, distractorPool){
+  const uniqueCorrect = shuffle([...new Set(correctPool)]);
+  const uniqueDistractor = shuffle([...new Set(distractorPool)]);
+  const correctCount = Math.min(MUNCHER_CORRECT_COUNT, MUNCHER_TOTAL-4, Math.max(3, uniqueCorrect.length));
+  const path = buildMuncherPath(correctCount);
+  const cells = new Array(MUNCHER_TOTAL).fill(null);
+  path.forEach((pos, i) => {
+    const idx = pos.r * MUNCHER_COLS + pos.c;
+    cells[idx] = { label: uniqueCorrect[i % uniqueCorrect.length], correct:true };
+  });
+  let di = 0;
+  for(let idx=0; idx<MUNCHER_TOTAL; idx++){
+    if(cells[idx]) continue;
+    const label = uniqueDistractor.length ? uniqueDistractor[di % uniqueDistractor.length] : '•';
+    cells[idx] = { label, correct:false };
+    di++;
+  }
+  return { cells, path };
+}
+function makeMuncherRound(promptText, enemyIcon, correctPool, distractorPool){
+  const built = buildMuncherCells(correctPool, distractorPool);
+  return { promptText, enemyIcon, cells: built.cells, path: built.path };
+}
+function isUnlocked(idx){
+  if(idx===0) return true;
+  return state.stars[islands[idx-1].id] >= STARS_TO_UNLOCK;
+}
+function isMuncherUnlocked(idx){
+  // the Muncher island for a kingdom opens up once you've completed that kingdom's
+  // quiz at least once — after that it can be replayed any time on its own.
+  return state.stars[islands[idx].id] >= 1;
+}
+function isBossUnlocked(){
+  // the final showdown opens once every kingdom has been cleared (2★+)
+  return islands.every(isl => state.stars[isl.id] >= STARS_TO_UNLOCK);
+}
+function isFlightUnlocked(){
+  // Skyfire Flight opens once the Dragon Rider Showdown has been cleared at least once
+  return state.bossStars >= 1;
+}
+function buildMapNodes(){
+  // each kingdom contributes two stops along the path: the quiz island, then its
+  // own standalone Number Muncher island right after it. The Dragon Rider Showdown
+  // sits at the very end of the trail as the final challenge, followed by the
+  // Skyfire Flight opens up once the Showdown has been cleared.
+  const nodes = [];
+  islands.forEach((isl, idx) => {
+    nodes.push({ kind:'quiz', idx, isl });
+    nodes.push({ kind:'muncher', idx, isl });
+  });
+  nodes.push({ kind:'boss' });
+  nodes.push({ kind:'flight' });
+  return nodes;
+}
+function currentPositionIdx(){
+  // hero marker sits at the furthest kingdom that's unlocked and not yet 3-starred,
+  // or the last kingdom if everything is maxed out
+  for(let i=0;i<islands.length;i++){
+    if(isUnlocked(i) && state.stars[islands[i].id] < 3) return i;
+  }
+  return islands.length - 1;
+}
+
+/* ============ RENDER MAP ============ */
+function renderMap(){
+  const container = document.getElementById('islandsContainer');
+  container.innerHTML = '';
+  const nodes = buildMapNodes();
+  nodes.forEach((node, rowIdx) => {
+    const { kind, idx, isl } = node;
+    const row = document.createElement('div');
+    row.className = 'islandRow ' + (rowIdx%2===0 ? 'left':'right');
+    row.dataset.idx = rowIdx;
+
+    const div = document.createElement('div');
+
+    if(kind === 'boss'){
+      const unlocked = isBossUnlocked();
+      div.className = 'island bossIsland' + (unlocked ? '' : ' locked');
+      div.onclick = () => { if(!unlocked) return; openBossMode(); };
+      const badgeHtml = `<div class="islandStars">${[1,2,3].map(n => `<span class="${n<=state.bossStars?'star-on':'star-off'}">★</span>`).join('')}</div>`;
+      div.innerHTML = `
+        <div class="islandBlob">
+          ${!unlocked ? '<div class="lockIcon">🔒</div>' : ''}
+          <div class="num">🐉</div>
+          <div class="op">${unlocked ? 'final showdown' : 'clear all kingdoms'}</div>
+        </div>
+        <div class="islandName">Dragon Rider Showdown</div>
+        ${badgeHtml}
+      `;
+      row.appendChild(div);
+      container.appendChild(row);
+      return;
+    }
+
+    if(kind === 'flight'){
+      const unlocked = isFlightUnlocked();
+      div.className = 'island bossIsland' + (unlocked ? '' : ' locked');
+      div.onclick = () => { if(!unlocked) return; openFlightMode(); };
+      const badgeHtml = `<div class="islandStars">${[1,2,3].map(n => `<span class="${n<=state.flightStars?'star-on':'star-off'}">★</span>`).join('')}</div>`;
+      div.innerHTML = `
+        <div class="islandBlob">
+          ${!unlocked ? '<div class="lockIcon">🔒</div>' : ''}
+          <div class="num">🔥</div>
+          <div class="op">${unlocked ? 'treasure flight' : 'clear the showdown'}</div>
+        </div>
+        <div class="islandName">Skyfire Flight</div>
+        ${badgeHtml}
+      `;
+      row.appendChild(div);
+      container.appendChild(row);
+      return;
+    }
+
+    const unlocked = kind === 'quiz' ? isUnlocked(idx) : isMuncherUnlocked(idx);
+    div.className = 'island' + (unlocked? '' : ' locked') + (kind==='muncher' ? ' muncherIsland' : '');
+    div.onclick = () => {
+      if(!unlocked) return;
+      if(kind === 'quiz') openQuest(idx);
+      else openMuncherStandalone(idx);
+    };
+
+    const icon = kind === 'quiz' ? isl.icon : '🍽️';
+    const label = kind === 'quiz' ? isl.name : `${isl.name} Muncher`;
+    const opLabel = kind === 'quiz' ? isl.op : 'replay';
+    const badgeHtml = kind === 'quiz'
+      ? `<div class="islandStars">${[1,2,3].map(n => `<span class="${n<=state.stars[isl.id]?'star-on':'star-off'}">★</span>`).join('')}</div>`
+      : `<div class="islandStars muncherTag">practice</div>`;
+
+    div.innerHTML = `
+      <div class="islandBlob" style="background:${isl.colorHex}">
+        ${!unlocked ? '<div class="lockIcon">🔒</div>' : ''}
+        <div class="num">${icon}</div>
+        <div class="op">${opLabel}</div>
+      </div>
+      <div class="islandName">${label}</div>
+      ${badgeHtml}
+    `;
+    row.appendChild(div);
+    container.appendChild(row);
+  });
+
+  renderHeroCard();
+  drawPath();
+}
+
+function drawPath(){
+  const svg = document.getElementById('pathSvg');
+  const rows = document.querySelectorAll('.islandRow');
+  const wrap = document.querySelector('.mapWrap');
+  if(!rows.length) return;
+  const wrapRect = wrap.getBoundingClientRect();
+  let points = [];
+  rows.forEach(row => {
+    const blob = row.querySelector('.islandBlob');
+    const r = blob.getBoundingClientRect();
+    points.push({
+      x: r.left + r.width/2 - wrapRect.left,
+      y: r.top + r.height/2 - wrapRect.top
+    });
+  });
+  let d = '';
+  points.forEach((p,i) => {
+    d += (i===0? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`);
+  });
+  svg.innerHTML = `<path d="${d}" fill="none" stroke="#D9A441" stroke-width="4" stroke-dasharray="2,14" stroke-linecap="round" opacity="0.55"/>`;
+
+  // place the hero marker on the map at their current kingdom's quiz stop
+  const posIdx = currentPositionIdx();
+  const p = points[posIdx*2];
+  if(p && window.innerWidth > 560){
+    const level = heroLevel();
+    const marker = document.createElement('div');
+    marker.className = 'heroMarker';
+    marker.style.left = p.x + 'px';
+    marker.style.top = p.y + 'px';
+    marker.innerHTML = avatarSVG(state.hero.name, level, 34);
+    const old = document.querySelector('.heroMarker');
+    if(old) old.remove();
+    document.querySelector('.mapWrap').appendChild(marker);
+  }
+}
+window.addEventListener('resize', drawPath);
+
+/* ============ QUEST FLOW ============ */
+function openQuest(idx){
+  activeQuest = {
+    islandIdx: idx,
+    island: islands[idx],
+    qIndex: 0,
+    correctCount: 0,
+    streak: 0,
+    misses: 0,
+    answered: false,
+    standalone: false
+  };
+  document.getElementById('overlay').classList.add('show');
+  nextProblem();
+}
+
+function openMuncherStandalone(idx){
+  activeQuest = {
+    islandIdx: idx,
+    island: islands[idx],
+    standalone: true
+  };
+  document.getElementById('overlay').classList.add('show');
+  startMuncherMode();
+}
+
+function closeQuest(){
+  document.getElementById('overlay').classList.remove('show');
+  if(activeMuncher){
+    clearInterval(activeMuncher.timer);
+    document.removeEventListener('keydown', muncherKeyHandler);
+    activeMuncher = null;
+  }
+  if(activeBoss){
+    if(activeBoss.rafId) cancelAnimationFrame(activeBoss.rafId);
+    document.removeEventListener('keydown', bossKeyHandler);
+    activeBoss = null;
+  }
+  if(activeFlight){
+    if(activeFlight.rafId) cancelAnimationFrame(activeFlight.rafId);
+    document.removeEventListener('keydown', flightKeyHandler);
+    activeFlight = null;
+  }
+  activeQuest = null;
+  renderMap();
+}
+
+function nextProblem(){
+  const q = activeQuest;
+  if(q.qIndex >= QUESTIONS_PER_QUEST){
+    renderResults();
+    return;
+  }
+  const level = state.adaptiveLevel[q.island.id];
+  q.currentProblem = q.island.generator(level);
+  q.answered = false;
+  renderProblem();
+}
+
+function renderResults(){
+  const q = activeQuest;
+  const isl = q.island;
+  const pct = q.correctCount / QUESTIONS_PER_QUEST;
+  let starsEarned = 1;
+  if(pct >= 0.85) starsEarned = 3;
+  else if(pct >= 0.6) starsEarned = 2;
+
+  const wasFirstClear = state.stars[isl.id] === 0 && starsEarned > 0;
+  state.stars[isl.id] = Math.max(state.stars[isl.id], starsEarned);
+
+  // Prizes (XP, hero level-ups, gear) come only from the quiz — the Muncher
+  // round that follows is just for extra practice and doesn't grant rewards.
+  const levelBefore = heroLevel();
+  let xpGained = q.correctCount * 10 + starsEarned * 15;
+  if(wasFirstClear) xpGained += 25;
+  state.hero.totalXp += xpGained;
+  const levelAfter = heroLevel();
+  const leveledUp = levelAfter > levelBefore;
+  const newGear = leveledUp ? GEAR_TABLE.filter(g => g.level > levelBefore && g.level <= levelAfter) : [];
+
+  saveState();
+
+  const panel = document.getElementById('questPanel');
+  panel.classList.remove('muncherActive');
+  panel.classList.remove('bossActive');
+  const starDisplay = [1,2,3].map(n => `<span class="${n<=starsEarned?'star-on':'star-off'}">★</span>`).join('');
+  const justUnlockedNextKingdom = islands[activeQuest.islandIdx+1] && state.stars[isl.id] >= STARS_TO_UNLOCK;
+  const justUnlockedMuncherIsland = wasFirstClear;
+
+  panel.innerHTML = `
+    <button class="closeBtn" onclick="closeQuest()">✕</button>
+    <div class="resultsArea">
+      <div class="questBadge" style="background:${isl.colorHex}; margin:0 auto;">${isl.icon}</div>
+      <h2>${isl.name} quiz complete!</h2>
+      <p>${q.correctCount} of ${QUESTIONS_PER_QUEST} correct</p>
+      <div class="bigStars">${starDisplay}</div>
+      <div class="xpGainLine">
+        <span style="font-weight:800;color:var(--gold)">+${xpGained} XP</span>
+        <div class="xpGainBar"><div class="xpGainFill" id="xpGainFill"></div></div>
+      </div>
+      <div class="levelUpBanner" id="levelUpBanner">
+        ⭐ Level up! ${state.hero.name} reached Level ${levelAfter}.
+        ${newGear.length ? '<br>New gear unlocked: ' + newGear.map(g=>g.icon+' '+g.name).join(', ') : ''}
+      </div>
+      ${justUnlockedNextKingdom ? `<p style="color:var(--teal)">🗺️ ${islands[activeQuest.islandIdx+1].name} is now unlocked!</p>` : (state.stars[isl.id] < STARS_TO_UNLOCK ? `<p>Earn ${STARS_TO_UNLOCK}★ to unlock the next kingdom.</p>` : '')}
+      ${justUnlockedMuncherIsland ? `<p style="color:var(--teal)">🍽️ ${isl.name} Muncher is now unlocked on the map — replay it any time for practice!</p>` : ''}
+      <button onclick="startMuncherMode()">Continue to Number Muncher 🍽️</button>
+    </div>
+  `;
+
+  requestAnimationFrame(() => {
+    const fill = document.getElementById('xpGainFill');
+    if(fill) fill.style.width = Math.min(100, Math.round((heroXpIntoLevel()/heroXpNeeded())*100)) + '%';
+  });
+  if(leveledUp){
+    setTimeout(() => {
+      const banner = document.getElementById('levelUpBanner');
+      if(banner) banner.classList.add('show');
+      playSFX('levelup');
+    }, 500);
+  }
+}
+
+function renderProblem(){
+  const q = activeQuest;
+  const isl = q.island;
+  const panel = document.getElementById('questPanel');
+  panel.classList.remove('muncherActive');
+  panel.classList.remove('bossActive');
+  const segs = Array.from({length:QUESTIONS_PER_QUEST}).map((_,i) => {
+    let cls = 'seg';
+    if(i < q.qIndex) cls += ' done';
+    else if(i === q.qIndex) cls += ' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <button class="closeBtn" onclick="closeQuest()">✕</button>
+    <div class="questHeader">
+      <div class="questBadge" style="background:${isl.colorHex}">${isl.icon}</div>
+      <div>
+        <h2>${isl.name}</h2>
+        <p>${isl.grade} grade · question ${q.qIndex+1} of ${QUESTIONS_PER_QUEST}</p>
+      </div>
+    </div>
+    <div class="progressBar">${segs}</div>
+    <div class="problemArea">
+      ${q.currentProblem.visualHtml ? `<div class="problemVisual" style="margin-bottom:16px;">${q.currentProblem.visualHtml}</div>` : ''}
+      <div class="problemText">${q.currentProblem.text.replace(/\n/g,'<br>')}</div>
+      <div class="choices" id="choicesGrid">
+        ${q.currentProblem.choices.map(c => `<button class="choiceBtn" data-val="${c}">${c}</button>`).join('')}
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nextBtn" id="nextBtn" onclick="nextProblem()">Continue</button>
+    </div>
+  `;
+  document.querySelectorAll('.choiceBtn').forEach(btn => {
+    btn.onclick = () => handleAnswer(parseInt(btn.dataset.val,10), btn);
+  });
+}
+
+function handleAnswer(val, btnEl){
+  const q = activeQuest;
+  if(q.answered) return;
+  q.answered = true;
+  const correct = val === q.currentProblem.answer;
+  const isl = q.island;
+
+  document.querySelectorAll('.choiceBtn').forEach(b => {
+    b.disabled = true;
+    if(parseInt(b.dataset.val,10) === q.currentProblem.answer) b.classList.add('correct');
+    else if(b === btnEl) b.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('feedback');
+  if(correct){
+    q.correctCount++;
+    q.streak++;
+    q.misses = Math.max(0,q.misses-1);
+    fb.innerHTML = ['Nice!','You got it!','Great job!','Correct!'][Math.floor(Math.random()*4)] + `<div class="xpToast">+10 XP</div>`;
+    fb.className = 'feedback';
+    if(q.streak >= 3){
+      state.adaptiveLevel[isl.id] = Math.min(2, state.adaptiveLevel[isl.id]+1);
+      q.streak = 0;
+    }
+  } else {
+    q.streak = 0;
+    q.misses++;
+    fb.textContent = `Not quite — it's ${q.currentProblem.answer}. Keep going!`;
+    fb.className = 'feedback bad';
+    if(q.misses >= 2){
+      state.adaptiveLevel[isl.id] = Math.max(0, state.adaptiveLevel[isl.id]-1);
+      q.misses = 0;
+    }
+  }
+  q.qIndex++;
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+/* ============ NUMBER MUNCHER MINI-GAME ============ */
+function startMuncherMode(){
+  const isl = activeQuest.island;
+  const level = state.adaptiveLevel[isl.id];
+  const round = isl.muncher(level);
+  const pathSet = new Set(round.path.map(p => `${p.r},${p.c}`));
+  const spawn = pickEnemySpawn(pathSet);
+  const enemies = [{ r: spawn.r, c: spawn.c }];
+  const eaten = new Array(round.cells.length).fill(false);
+  eaten[0] = true; // the hero's home tile (0,0) is never part of the safe path — treat it as already cleared
+  activeMuncher = {
+    island: isl,
+    level,
+    promptText: round.promptText,
+    enemyIcon: round.enemyIcon,
+    cells: round.cells,
+    eaten,
+    correctTotal: round.cells.filter(c => c.correct).length,
+    correctEaten: 0,
+    mistakes: 0,
+    lives: MUNCHER_LIVES,
+    player: { r:0, c:0 },
+    enemies,
+    ended: false,
+    timer: null
+  };
+  document.addEventListener('keydown', muncherKeyHandler);
+  activeMuncher.timer = setInterval(tickMuncherEnemies, MUNCHER_TICK_MS);
+  renderMuncher();
+}
+
+function muncherKeyHandler(e){
+  if(!activeMuncher || activeMuncher.ended) return;
+  if(e.key === ' ' || e.code === 'Space' || e.key === 'Spacebar'){
+    e.preventDefault();
+    munchCurrentTile();
+    return;
+  }
+  const map = { ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1], w:[-1,0], s:[1,0], a:[0,-1], d:[0,1] };
+  const mv = map[e.key];
+  if(mv){ e.preventDefault(); moveMuncher(mv[0], mv[1]); }
+}
+
+function moveMuncher(dr, dc){
+  const m = activeMuncher;
+  if(!m || m.ended) return;
+  const nr = m.player.r + dr, nc = m.player.c + dc;
+  if(nr < 0 || nr >= MUNCHER_ROWS || nc < 0 || nc >= MUNCHER_COLS) return; // edge of the board — no wraparound
+  m.player.r = nr;
+  m.player.c = nc;
+  checkMuncherCollision();
+  if(!m.ended) renderMuncher();
+}
+
+function munchCurrentTile(){
+  const m = activeMuncher;
+  if(!m || m.ended) return;
+  const idx = m.player.r * MUNCHER_COLS + m.player.c;
+  if(!m.eaten[idx]){
+    m.eaten[idx] = true;
+    if(m.cells[idx].correct){ m.correctEaten++; playSFX('correct'); }
+    else { m.mistakes++; m.lives--; playSFX('wrong'); }
+  }
+  // check for a win FIRST — munching the last correct tile always counts as clearing
+  // the board, even if an enemy happens to be sitting on that same tile right now.
+  if(m.correctEaten >= m.correctTotal){ endMuncherRound(true); return; }
+  if(m.lives <= 0){ endMuncherRound(false); return; }
+  checkMuncherCollision();
+  if(!m.ended) renderMuncher();
+}
+
+function checkMuncherCollision(){
+  const m = activeMuncher;
+  if(!m || m.ended) return;
+  const caught = m.enemies.some(en => en.r === m.player.r && en.c === m.player.c);
+  if(caught){
+    m.mistakes++; m.lives--;
+    playSFX('caught');
+    m.player = { r:0, c:0 };
+    if(m.lives <= 0) endMuncherRound(false);
+  }
+}
+
+function tickMuncherEnemies(){
+  const m = activeMuncher;
+  if(!m || m.ended) return;
+  m.enemies.forEach(en => {
+    const options = muncherNeighbors(en.r, en.c);
+    if(!options.length) return;
+    let target;
+    if(Math.random() < 0.5){
+      target = options.slice().sort((a,b) => {
+        const da = Math.abs(a[0]-m.player.r) + Math.abs(a[1]-m.player.c);
+        const db = Math.abs(b[0]-m.player.r) + Math.abs(b[1]-m.player.c);
+        return da - db;
+      })[0];
+    } else {
+      target = options[Math.floor(Math.random()*options.length)];
+    }
+    en.r = target[0];
+    en.c = target[1];
+  });
+  checkMuncherCollision();
+  if(!m.ended) renderMuncher();
+}
+
+function renderMuncher(){
+  const m = activeMuncher;
+  const q = activeQuest;
+  const isl = m.island;
+  const panel = document.getElementById('questPanel');
+  const heroLvl = heroLevel();
+  const cellsHtml = m.cells.map((cell,i) => {
+    const eaten = m.eaten[i];
+    return `<div class="muncherCell ${eaten?'eaten':''}">${eaten?'':cell.label}</div>`;
+  }).join('');
+  const heartsHtml = Array.from({length:MUNCHER_LIVES}).map((_,i)=> i<m.lives ? '❤️' : '🖤').join('');
+
+  panel.classList.remove('bossActive');
+  panel.classList.add('muncherActive');
+  panel.innerHTML = `
+    <button class="closeBtn" onclick="closeQuest()">✕</button>
+    <div class="questHeader">
+      <div class="questBadge" style="background:${isl.colorHex}">${q.standalone ? '🍽️' : isl.icon}</div>
+      <div>
+        <h2>${isl.name}${q.standalone ? ' Muncher' : ''}</h2>
+        <p>${q.standalone ? '' : `Quiz ${q.correctCount}/${QUESTIONS_PER_QUEST} · `}Muncher ${m.correctEaten}/${m.correctTotal} · ${heartsHtml}</p>
+      </div>
+    </div>
+    <div class="muncherPrompt">${m.promptText}</div>
+    <div class="muncherGrid" id="muncherGrid" style="grid-template-columns:repeat(${MUNCHER_COLS},1fr);">
+      ${cellsHtml}
+      <div class="muncherSprite player" id="muncherPlayer">${avatarSVG(state.hero.name, heroLvl, 48)}</div>
+      ${m.enemies.map((e,i)=>`<div class="muncherSprite enemy" id="muncherEnemy${i}">${m.enemyIcon}</div>`).join('')}
+    </div>
+    <div class="dpad">
+      <button onclick="moveMuncher(-1,0)">▲</button>
+      <div class="dpadRow">
+        <button onclick="moveMuncher(0,-1)">◀</button>
+        <button class="munchBtn" onclick="munchCurrentTile()">🍴</button>
+        <button onclick="moveMuncher(0,1)">▶</button>
+      </div>
+      <button onclick="moveMuncher(1,0)">▼</button>
+    </div>
+    <div class="muncherHint">Arrow keys or buttons move your hero. Press <strong>Space</strong> (or 🍴) to munch the tile you're standing on — dodge the ${isl.name.toLowerCase()} critter!</div>
+  `;
+  positionMuncherSprites();
+}
+
+function positionMuncherSprites(){
+  const m = activeMuncher;
+  const grid = document.getElementById('muncherGrid');
+  const cell = grid && grid.querySelector('.muncherCell');
+  if(!grid || !cell) return;
+  const cw = cell.getBoundingClientRect().width;
+  const ch = cell.getBoundingClientRect().height;
+  const playerEl = document.getElementById('muncherPlayer');
+  if(playerEl){
+    playerEl.style.left = (m.player.c*cw + cw/2) + 'px';
+    playerEl.style.top = (m.player.r*ch + ch/2) + 'px';
+  }
+  m.enemies.forEach((en,i) => {
+    const el = document.getElementById('muncherEnemy'+i);
+    if(el){ el.style.left = (en.c*cw + cw/2) + 'px'; el.style.top = (en.r*ch + ch/2) + 'px'; }
+  });
+}
+
+function endMuncherRound(success){
+  const m = activeMuncher;
+  if(!m || m.ended) return;
+  m.ended = true;
+  clearInterval(m.timer);
+  document.removeEventListener('keydown', muncherKeyHandler);
+
+  const q = activeQuest;
+  const isl = m.island;
+  const standalone = !!q.standalone;
+  const fullClear = m.correctEaten >= m.correctTotal;
+  playSFX(fullClear ? 'win' : 'lose');
+
+  // The Muncher round is practice only — no stars, XP, or gear are awarded here.
+  // Prizes only ever come from the quiz.
+  const panel = document.getElementById('questPanel');
+  panel.classList.remove('muncherActive');
+  panel.classList.remove('bossActive');
+  const headline = fullClear ? 'Board cleared! 🎉' : 'Nice try!';
+  const summaryLine = `Munched ${m.correctEaten}/${m.correctTotal} correct${m.mistakes ? ` · ${m.mistakes} mistake${m.mistakes===1?'':'s'}` : ' · no mistakes!'}`;
+
+  panel.innerHTML = `
+    <button class="closeBtn" onclick="closeQuest()">✕</button>
+    <div class="resultsArea">
+      <div class="questBadge" style="background:${isl.colorHex}; margin:0 auto;">🍽️</div>
+      <h2>${isl.name} Muncher</h2>
+      <p style="font-weight:800;color:var(--ink);margin-top:4px;">${headline}</p>
+      <p>${summaryLine}</p>
+      <p style="font-size:11px;color:var(--ink-soft);margin-top:8px;">Just for practice — no stars or XP here. Head to the quiz for those!</p>
+      <button onclick="startMuncherMode()">🔁 Play Again</button>
+      <button onclick="closeQuest()" style="background:var(--indigo);margin-left:8px;">🗺️ Back to the Map</button>
+    </div>
+  `;
+}
+
+/* ============ DRAGON RIDER SHOWDOWN (FINAL BOSS) ============ */
+function openBossMode(){
+  activeQuest = { boss:true, standalone:true };
+  document.getElementById('overlay').classList.add('show');
+  activeBoss = {
+    lane: 1,
+    lives: BOSS_LIVES,
+    correctCount: 0,
+    misses: 0,
+    speed: BOSS_BASE_SPEED,
+    targets: [],
+    fireballs: [],
+    ended: false,
+    rafId: null,
+    lastTs: null
+  };
+  renderBossShell();
+  document.addEventListener('keydown', bossKeyHandler);
+  activeBoss.rafId = requestAnimationFrame(bossTick);
+  spawnBossProblem();
+}
+
+function bossHeartsHtml(){
+  return Array.from({length:BOSS_LIVES}).map((_,i)=> i<activeBoss.lives ? '❤️' : '🖤').join('');
+}
+function updateBossStatus(){
+  const el = document.getElementById('bossStatus');
+  if(el) el.innerHTML = `Hits ${activeBoss.correctCount}/${BOSS_TARGET_CORRECT} · ${bossHeartsHtml()}`;
+}
+
+function renderBossShell(){
+  const panel = document.getElementById('questPanel');
+  panel.classList.remove('muncherActive');
+  panel.classList.add('bossActive');
+  const heroLvl = heroLevel();
+  const laneRows = Array.from({length:BOSS_LANES}).map(()=>`<div class="bossLane"></div>`).join('');
+  panel.innerHTML = `
+    <button class="closeBtn" onclick="closeQuest()">✕</button>
+    <div class="questHeader">
+      <div class="questBadge" style="background:linear-gradient(135deg,var(--coral),var(--gold))">🐉</div>
+      <div>
+        <h2>Dragon Rider Showdown</h2>
+        <p id="bossStatus"></p>
+      </div>
+    </div>
+    <div class="bossPrompt" id="bossPrompt"></div>
+    <div class="bossArena" id="bossArena">
+      ${laneRows}
+      <div class="bossDragon" id="bossDragon">
+        <span class="bossDragonEmoji">🐉</span>
+        <span class="bossRider">${avatarSVG(state.hero.name, heroLvl, 26)}</span>
+      </div>
+    </div>
+    <div class="dpad">
+      <button onclick="moveBossLane(-1)">▲</button>
+      <div class="dpadRow">
+        <button class="munchBtn" onclick="fireBossBlast()">🔥</button>
+      </div>
+      <button onclick="moveBossLane(1)">▼</button>
+    </div>
+    <div class="muncherHint">Arrow keys or ▲▼ move your dragon between lanes. Press <strong>Space</strong> (or 🔥) to blast the answer that solves the problem — every kingdom's skills can show up here!</div>
+  `;
+  updateBossStatus();
+  positionDragon();
+}
+
+function positionDragon(){
+  const el = document.getElementById('bossDragon');
+  if(!el || !activeBoss) return;
+  el.style.left = BOSS_DRAGON_X + '%';
+  el.style.top = ((activeBoss.lane+0.5)*(100/BOSS_LANES)) + '%';
+}
+
+function moveBossLane(delta){
+  const b = activeBoss;
+  if(!b || b.ended) return;
+  b.lane = Math.max(0, Math.min(BOSS_LANES-1, b.lane+delta));
+  positionDragon();
+}
+
+function positionEntity(el, x, lane){
+  el.style.left = x + '%';
+  el.style.top = ((lane+0.5)*(100/BOSS_LANES)) + '%';
+}
+
+function fireBossBlast(){
+  const b = activeBoss;
+  if(!b || b.ended) return;
+  const arena = document.getElementById('bossArena');
+  if(!arena) return;
+  const fb = { lane:b.lane, x:BOSS_DRAGON_X+3, dead:false, el:null };
+  const el = document.createElement('div');
+  el.className = 'bossFireball';
+  el.textContent = '🔥';
+  arena.appendChild(el);
+  fb.el = el;
+  positionEntity(el, fb.x, fb.lane);
+  b.fireballs.push(fb);
+}
+
+function bossKeyHandler(e){
+  if(!activeBoss || activeBoss.ended) return;
+  if(e.key === ' ' || e.code === 'Space' || e.key === 'Spacebar'){
+    e.preventDefault();
+    fireBossBlast();
+    return;
+  }
+  const map = { ArrowUp:-1, ArrowDown:1, w:-1, s:1 };
+  if(map[e.key] !== undefined){ e.preventDefault(); moveBossLane(map[e.key]); }
+}
+
+function ensureFourChoices(choices, answer){
+  const set = new Set(choices);
+  set.add(answer);
+  let guard = 0;
+  while(set.size < BOSS_LANES && guard < 60){
+    guard++;
+    const delta = 1 + Math.floor(Math.random()*6);
+    const candidate = Math.random()<0.5 ? answer+delta : answer-delta;
+    if(candidate>=0) set.add(candidate);
+  }
+  let result = shuffle([...set]).slice(0, BOSS_LANES);
+  if(!result.includes(answer)) result[Math.floor(Math.random()*result.length)] = answer;
+  return result;
+}
+
+function spawnBossProblem(){
+  const b = activeBoss;
+  if(!b || b.ended) return;
+  const isl = islands[Math.floor(Math.random()*islands.length)];
+  const level = Math.min(2, Math.floor(b.correctCount/4));
+  const problem = isl.generator(level);
+  const choices = ensureFourChoices(problem.choices.slice(), problem.answer);
+  const laneOrder = shuffle([0,1,2,3]);
+
+  const arena = document.getElementById('bossArena');
+  arena.querySelectorAll('.bossTarget, .bossFireball').forEach(el=>el.remove());
+  b.fireballs = [];
+  b.targets = [];
+  choices.forEach((val,i)=>{
+    const lane = laneOrder[i];
+    const t = { lane, value:val, correct: val===problem.answer, x:BOSS_SPAWN_X, hit:false, escaped:false, el:null };
+    const el = document.createElement('div');
+    el.className = 'bossTarget';
+    el.innerHTML = `<span>${val}</span>`;
+    arena.appendChild(el);
+    t.el = el;
+    positionEntity(el, t.x, lane);
+    b.targets.push(t);
+  });
+
+  document.getElementById('bossPrompt').innerHTML =
+    (problem.visualHtml ? `<div class="bossVisual">${problem.visualHtml}</div>` : '') +
+    `<div class="bossPromptText">${problem.text.replace(/\n/g,'<br>')}</div>`;
+}
+
+function flashBossFeedback(good){
+  const arena = document.getElementById('bossArena');
+  if(!arena) return;
+  arena.classList.remove('flash-good','flash-bad');
+  void arena.offsetWidth;
+  arena.classList.add(good ? 'flash-good' : 'flash-bad');
+  setTimeout(()=>arena.classList.remove('flash-good','flash-bad'), 400);
+}
+
+function handleBossHit(target){
+  const b = activeBoss;
+  if(!b) return;
+  if(target.correct){
+    b.correctCount++;
+    b.speed = BOSS_BASE_SPEED + b.correctCount*BOSS_SPEED_STEP;
+    playSFX('hit');
+    flashBossFeedback(true);
+    updateBossStatus();
+    if(b.correctCount >= BOSS_TARGET_CORRECT){ endBossRound(true); return; }
+    b.targets.forEach(t2 => { if(!t2.hit && !t2.escaped && t2.el){ t2.hit = true; t2.el.remove(); } });
+    b.targets = [];
+    setTimeout(()=>{ if(activeBoss && !activeBoss.ended) spawnBossProblem(); }, 500);
+  } else {
+    b.lives--;
+    b.misses++;
+    playSFX('miss');
+    flashBossFeedback(false);
+    updateBossStatus();
+    if(b.lives <= 0){ endBossRound(false); return; }
+  }
+}
+
+function handleBossMiss(){
+  const b = activeBoss;
+  if(!b) return;
+  b.lives--;
+  b.misses++;
+  playSFX('miss');
+  flashBossFeedback(false);
+  updateBossStatus();
+  if(b.lives <= 0){ endBossRound(false); return; }
+  b.targets.forEach(t2 => { if(!t2.hit && !t2.escaped && t2.el){ t2.escaped = true; t2.el.remove(); } });
+  b.targets = [];
+  setTimeout(()=>{ if(activeBoss && !activeBoss.ended) spawnBossProblem(); }, 400);
+}
+
+function bossTick(ts){
+  const b = activeBoss;
+  if(!b || b.ended) return;
+  if(b.lastTs == null) b.lastTs = ts;
+  const dt = Math.min(0.05, (ts-b.lastTs)/1000);
+  b.lastTs = ts;
+
+  b.targets.forEach(t=>{
+    if(t.hit || t.escaped) return;
+    t.x -= b.speed*dt;
+    if(t.el) positionEntity(t.el, t.x, t.lane);
+  });
+  b.fireballs.forEach(f=>{
+    if(f.dead) return;
+    f.x += BOSS_FIREBALL_SPEED*dt;
+    if(f.el) positionEntity(f.el, f.x, f.lane);
+  });
+
+  b.fireballs.forEach(f=>{
+    if(f.dead) return;
+    b.targets.forEach(t=>{
+      if(t.hit || t.escaped || t.lane!==f.lane) return;
+      if(Math.abs(f.x - t.x) < BOSS_HIT_RADIUS){
+        f.dead = true;
+        t.hit = true;
+        if(t.el) t.el.remove();
+        if(f.el) f.el.remove();
+        handleBossHit(t);
+      }
+    });
+  });
+  b.fireballs = b.fireballs.filter(f=>{
+    if(f.dead || f.x > 105){ if(f.el) f.el.remove(); return false; }
+    return true;
+  });
+
+  b.targets.forEach(t=>{
+    if(!t.hit && !t.escaped && t.x <= BOSS_DRAGON_X){
+      t.escaped = true;
+      if(t.el) t.el.remove();
+      if(t.correct) handleBossMiss();
+    }
+  });
+
+  if(activeBoss && !activeBoss.ended) activeBoss.rafId = requestAnimationFrame(bossTick);
+}
+
+function endBossRound(success){
+  const b = activeBoss;
+  if(!b || b.ended) return;
+  b.ended = true;
+  if(b.rafId) cancelAnimationFrame(b.rafId);
+  document.removeEventListener('keydown', bossKeyHandler);
+  document.querySelectorAll('.bossTarget, .bossFireball').forEach(el=>el.remove());
+
+  const starsEarned = success ? 3 : (b.correctCount>=8 ? 2 : b.correctCount>=4 ? 1 : 0);
+  const wasFirstClear = state.bossStars===0 && starsEarned>0;
+  state.bossStars = Math.max(state.bossStars, starsEarned);
+  state.bossBestHits = Math.max(state.bossBestHits||0, b.correctCount);
+
+  const levelBefore = heroLevel();
+  let xpGained = b.correctCount*12 + starsEarned*20;
+  if(wasFirstClear) xpGained += 50;
+  state.hero.totalXp += xpGained;
+  const levelAfter = heroLevel();
+  const leveledUp = levelAfter > levelBefore;
+  const newGear = leveledUp ? GEAR_TABLE.filter(g => g.level > levelBefore && g.level <= levelAfter) : [];
+
+  saveState();
+  playSFX(success ? 'win' : 'lose');
+
+  const panel = document.getElementById('questPanel');
+  panel.classList.remove('bossActive');
+  const starDisplay = [1,2,3].map(n => `<span class="${n<=starsEarned?'star-on':'star-off'}">★</span>`).join('');
+  const headline = success ? 'The dragon triumphs! 🐉🔥' : 'Out of lives — the dragon needs to rest!';
+
+  panel.innerHTML = `
+    <button class="closeBtn" onclick="closeQuest()">✕</button>
+    <div class="resultsArea">
+      <div class="questBadge" style="background:linear-gradient(135deg,var(--coral),var(--gold)); margin:0 auto;">🐉</div>
+      <h2>Dragon Rider Showdown</h2>
+      <p style="font-weight:800;color:var(--ink);margin-top:4px;">${headline}</p>
+      <p>${b.correctCount} correct hit${b.correctCount===1?'':'s'} of ${BOSS_TARGET_CORRECT}${b.misses ? ` · ${b.misses} miss${b.misses===1?'':'es'}` : ' · no misses!'}</p>
+      <div class="bigStars">${starDisplay}</div>
+      <div class="xpGainLine">
+        <span style="font-weight:800;color:var(--gold)">+${xpGained} XP</span>
+        <div class="xpGainBar"><div class="xpGainFill" id="xpGainFill"></div></div>
+      </div>
+      <div class="levelUpBanner" id="levelUpBanner">
+        ⭐ Level up! ${state.hero.name} reached Level ${levelAfter}.
+        ${newGear.length ? '<br>New gear unlocked: ' + newGear.map(g=>g.icon+' '+g.name).join(', ') : ''}
+      </div>
+      <button onclick="openBossMode()">🔁 ${success ? 'Play Again' : 'Try Again'}</button>
+      <button onclick="closeQuest()" style="background:var(--indigo);margin-left:8px;">🗺️ Back to the Map</button>
+    </div>
+  `;
+
+  requestAnimationFrame(() => {
+    const fill = document.getElementById('xpGainFill');
+    if(fill) fill.style.width = Math.min(100, Math.round((heroXpIntoLevel()/heroXpNeeded())*100)) + '%';
+  });
+  if(leveledUp){
+    setTimeout(() => {
+      const banner = document.getElementById('levelUpBanner');
+      if(banner) banner.classList.add('show');
+      playSFX('levelup');
+    }, 500);
+  }
+  activeBoss = null;
+}
+
+/* ============ SKYFIRE FLIGHT ============ */
+function ensureChoiceCount(choices, answer, count){
+  const set = new Set(choices);
+  set.add(answer);
+  let guard = 0;
+  while(set.size < count && guard < 80){
+    guard++;
+    const delta = 1 + Math.floor(Math.random()*6);
+    const candidate = Math.random()<0.5 ? answer+delta : answer-delta;
+    if(candidate>=0) set.add(candidate);
+  }
+  let result = shuffle([...set]).slice(0, count);
+  if(!result.includes(answer)) result[Math.floor(Math.random()*result.length)] = answer;
+  return result;
+}
+
+function openFlightMode(){
+  activeQuest = { flight:true, standalone:true };
+  document.getElementById('overlay').classList.add('show');
+  activeFlight = {
+    lives: FLIGHT_LIVES,
+    correctCount: 0,
+    misses: 0,
+    speed: FLIGHT_BASE_SPEED,
+    debris: [],
+    ended: false,
+    rafId: null,
+    lastTs: null
+  };
+  renderFlightShell();
+  document.addEventListener('keydown', flightKeyHandler);
+  activeFlight.rafId = requestAnimationFrame(flightTick);
+  spawnFlightProblem();
+}
+
+function flightHeartsHtml(){
+  return Array.from({length:FLIGHT_LIVES}).map((_,i)=> i<activeFlight.lives ? '❤️' : '🖤').join('');
+}
+function updateFlightStatus(){
+  const el = document.getElementById('flightStatus');
+  if(el) el.innerHTML = `Hits ${activeFlight.correctCount}/${FLIGHT_TARGET_CORRECT} · ${flightHeartsHtml()}`;
+}
+
+function renderFlightShell(){
+  const panel = document.getElementById('questPanel');
+  panel.classList.remove('bossActive');
+  panel.classList.add('flightActive');
+  const heroLvl = heroLevel();
+  panel.innerHTML = `
+    <button class="closeBtn" onclick="closeQuest()">✕</button>
+    <div class="questHeader">
+      <div class="questBadge" style="background:linear-gradient(135deg,var(--coral),var(--gold))">🔥</div>
+      <div>
+        <h2>Skyfire Flight</h2>
+        <p id="flightStatus"></p>
+      </div>
+    </div>
+    <div class="flightPrompt" id="flightPrompt"></div>
+    <div class="flightArena" id="flightArena">
+      <div class="flightCloud" style="left:14%;top:16%;">☁️</div>
+      <div class="flightCloud" style="left:74%;top:10%;">☁️</div>
+      <div class="flightCloud" style="left:50%;top:6%;font-size:18px;">✨</div>
+      <div class="flightDragon" id="flightDragon">
+        <span class="flightDragonEmoji">🐉</span>
+        <span class="flightRider">${avatarSVG(state.hero.name, heroLvl, 26)}</span>
+      </div>
+    </div>
+    <div class="flightInputRow">
+      <input type="number" inputmode="numeric" id="flightInput" class="flightInput" placeholder="?" autocomplete="off"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();fireFlightBreath();}" />
+      <button class="flightFireBtn" onclick="fireFlightBreath()">🔥 Breathe Fire</button>
+    </div>
+    <div class="muncherHint">Type the number that solves the problem, then press <strong>Enter</strong> or 🔥 Breathe Fire before the debris reaches your dragon!</div>
+  `;
+  updateFlightStatus();
+  const input = document.getElementById('flightInput');
+  if(input) input.focus();
+}
+
+function positionForDepth(depth, ox, oy){
+  const t = Math.min(1, depth/100);
+  const scale = 0.2 + t*1.05;
+  const left = 50 + ox*(6 + t*36);
+  const top = 28 + t*56 + oy*(3 + t*13);
+  return { left, top, scale };
+}
+
+function positionDebrisEl(el, depth, ox, oy, valEl){
+  const p = positionForDepth(depth, ox, oy);
+  el.style.left = p.left + '%';
+  el.style.top = p.top + '%';
+  el.style.transform = `translate(-50%,-50%) scale(${p.scale})`;
+  el.style.zIndex = String(2 + Math.round(p.scale*10));
+  if(valEl){
+    // grow the number itself beyond the icon's own scaling, so the value is
+    // clearly bigger and easier to read the closer the debris gets
+    const t = Math.min(1, depth/100);
+    valEl.style.fontSize = (12 + t*18) + 'px';
+    valEl.style.padding = `${1 + t*2}px ${7 + t*5}px`;
+  }
+}
+
+const FLIGHT_DEBRIS_EMOJI = ['🦅','🦉','🦇','🦋','🐝']; // eagle & owl kept from the muncher set, rest swapped for other flying critters
+
+// Skyfire Flight draws from every kingdom except Counting Cove — its "how many"
+// picture-counting questions don't translate well to the fast-paced flight format.
+const FLIGHT_ISLANDS = islands.filter(isl => isl.id !== 'counting-cove');
+
+function spawnFlightProblem(){
+  const b = activeFlight;
+  if(!b || b.ended) return;
+  const level = Math.min(2, Math.floor(b.correctCount/4));
+  let isl, problem, guard = 0;
+  do {
+    isl = FLIGHT_ISLANDS[Math.floor(Math.random()*FLIGHT_ISLANDS.length)];
+    problem = isl.generator(level);
+    guard++;
+    // Fraction Forest's "ranger planted trees" question is a random sub-branch of
+    // its generator (not a whole island), so skip it by re-rolling rather than
+    // filtering islands.
+  } while(/ranger planted/.test(problem.text) && guard < 15);
+  const choices = ensureChoiceCount(problem.choices.slice(), problem.answer, FLIGHT_DEBRIS_COUNT);
+  const quadrants = shuffle([{ox:-1,oy:-0.7},{ox:1,oy:-0.7},{ox:-1,oy:0.7},{ox:1,oy:0.7}]);
+
+  const arena = document.getElementById('flightArena');
+  arena.querySelectorAll('.flightDebris, .flightFlame').forEach(el=>el.remove());
+  b.debris = [];
+  choices.forEach((val,i)=>{
+    const q = quadrants[i % quadrants.length];
+    const d = { value:val, correct: val===problem.answer, depth:0, ox:q.ox, oy:q.oy, hit:false, escaped:false, el:null, valEl:null };
+    const el = document.createElement('div');
+    el.className = 'flightDebris';
+    const emoji = FLIGHT_DEBRIS_EMOJI[Math.floor(Math.random()*FLIGHT_DEBRIS_EMOJI.length)];
+    el.innerHTML = `<span class="flightDebrisRock" style="font-size:30px;">${emoji}</span><span class="flightDebrisVal">${val}</span>`;
+    arena.appendChild(el);
+    d.el = el;
+    d.valEl = el.querySelector('.flightDebrisVal');
+    positionDebrisEl(el, d.depth, d.ox, d.oy, d.valEl);
+    b.debris.push(d);
+  });
+
+  document.getElementById('flightPrompt').innerHTML =
+    (problem.visualHtml ? `<div class="bossVisual">${problem.visualHtml}</div>` : '') +
+    `<div class="flightPromptText">${problem.text.replace(/\n/g,'<br>')}</div>`;
+  const input = document.getElementById('flightInput');
+  if(input){ input.value=''; input.focus(); }
+}
+
+function flashFlightFeedback(kind){
+  const arena = document.getElementById('flightArena');
+  if(!arena || kind==='none') return;
+  arena.classList.remove('flash-good','flash-bad');
+  void arena.offsetWidth;
+  arena.classList.add(kind==='good' ? 'flash-good' : 'flash-bad');
+  setTimeout(()=>arena.classList.remove('flash-good','flash-bad'), 400);
+}
+
+function fireFlightBreath(){
+  const b = activeFlight;
+  if(!b || b.ended) return;
+  const input = document.getElementById('flightInput');
+  if(!input) return;
+  const raw = input.value.trim();
+  input.value = '';
+  input.focus();
+  if(raw === '') return;
+  const typed = Number(raw);
+  if(!Number.isFinite(typed)) return;
+  const candidates = b.debris.filter(d => !d.hit && !d.escaped && d.value===typed);
+  if(candidates.length === 0){
+    flashFlightFeedback('none');
+    return;
+  }
+  candidates.sort((x,y)=>y.depth-x.depth); // burn the nearest/most urgent match first
+  spawnFlame(candidates[0]);
+}
+
+function spawnFlame(target){
+  const arena = document.getElementById('flightArena');
+  if(!arena) return;
+  const pos = positionForDepth(target.depth, target.ox, target.oy);
+  target.hit = true;
+  if(target.el){ target.el.remove(); target.el = null; }
+
+  const flame = document.createElement('div');
+  flame.className = 'flightFlame';
+  flame.textContent = '🔥';
+  flame.style.left = '50%';
+  flame.style.top = '90%';
+  flame.style.transform = 'translate(-50%,-50%) scale(0.6)';
+  flame.style.opacity = '1';
+  arena.appendChild(flame);
+  void flame.offsetWidth;
+  flame.style.left = pos.left + '%';
+  flame.style.top = pos.top + '%';
+  flame.style.transform = `translate(-50%,-50%) scale(${pos.scale*1.1})`;
+
+  setTimeout(()=>{
+    flame.style.opacity = '0';
+    setTimeout(()=>{ if(flame.parentNode) flame.remove(); }, 220);
+    resolveFlightHit(target);
+  }, FLIGHT_FLAME_MS);
+}
+
+function resolveFlightHit(target){
+  const b = activeFlight;
+  if(!b) return;
+  if(target.correct){
+    b.correctCount++;
+    b.speed = FLIGHT_BASE_SPEED + b.correctCount*FLIGHT_SPEED_STEP;
+    playSFX('hit');
+    flashFlightFeedback('good');
+    updateFlightStatus();
+    if(b.correctCount >= FLIGHT_TARGET_CORRECT){ endFlightRound(true); return; }
+    b.debris.forEach(d => { if(!d.hit && !d.escaped && d.el){ d.hit = true; d.el.remove(); d.el = null; } });
+    b.debris = [];
+    setTimeout(()=>{ if(activeFlight && !activeFlight.ended) spawnFlightProblem(); }, 500);
+  } else {
+    b.lives--;
+    b.misses++;
+    playSFX('miss');
+    flashFlightFeedback('bad');
+    updateFlightStatus();
+    if(b.lives <= 0){ endFlightRound(false); return; }
+  }
+}
+
+function handleFlightMiss(){
+  const b = activeFlight;
+  if(!b) return;
+  b.lives--;
+  b.misses++;
+  playSFX('miss');
+  flashFlightFeedback('bad');
+  updateFlightStatus();
+  if(b.lives <= 0){ endFlightRound(false); return; }
+  b.debris.forEach(d => { if(!d.hit && !d.escaped && d.el){ d.escaped = true; d.el.remove(); d.el = null; } });
+  b.debris = [];
+  setTimeout(()=>{ if(activeFlight && !activeFlight.ended) spawnFlightProblem(); }, 400);
+}
+
+function flightKeyHandler(e){
+  if(!activeFlight || activeFlight.ended) return;
+  if(e.key === 'Enter'){
+    const input = document.getElementById('flightInput');
+    if(document.activeElement !== input){ e.preventDefault(); fireFlightBreath(); }
+  }
+}
+
+function flightTick(ts){
+  const b = activeFlight;
+  if(!b || b.ended) return;
+  if(b.lastTs == null) b.lastTs = ts;
+  const dt = Math.min(0.05, (ts-b.lastTs)/1000);
+  b.lastTs = ts;
+
+  b.debris.forEach(d=>{
+    if(d.hit || d.escaped) return;
+    d.depth += b.speed*dt;
+    if(d.el) positionDebrisEl(d.el, d.depth, d.ox, d.oy, d.valEl);
+  });
+
+  b.debris.forEach(d=>{
+    if(!d.hit && !d.escaped && d.depth >= FLIGHT_HIT_DEPTH){
+      d.escaped = true;
+      if(d.el){ d.el.remove(); d.el = null; }
+      if(d.correct) handleFlightMiss();
+    }
+  });
+
+  if(activeFlight && !activeFlight.ended) activeFlight.rafId = requestAnimationFrame(flightTick);
+}
+
+function endFlightRound(success){
+  const b = activeFlight;
+  if(!b || b.ended) return;
+  b.ended = true;
+  if(b.rafId) cancelAnimationFrame(b.rafId);
+  document.removeEventListener('keydown', flightKeyHandler);
+  document.querySelectorAll('.flightDebris, .flightFlame').forEach(el=>el.remove());
+
+  const starsEarned = success ? 3 : (b.correctCount>=8 ? 2 : b.correctCount>=4 ? 1 : 0);
+  const wasFirstClear = state.flightStars===0 && starsEarned>0;
+  state.flightStars = Math.max(state.flightStars, starsEarned);
+  state.flightBestHits = Math.max(state.flightBestHits||0, b.correctCount);
+
+  const levelBefore = heroLevel();
+  let xpGained = b.correctCount*12 + starsEarned*20;
+  if(wasFirstClear) xpGained += 50;
+  state.hero.totalXp += xpGained;
+  const levelAfter = heroLevel();
+  const leveledUp = levelAfter > levelBefore;
+  const newGear = leveledUp ? GEAR_TABLE.filter(g => g.level > levelBefore && g.level <= levelAfter) : [];
+
+  // Skyfire Flight is the last stop in the whole adventure, so the very first
+  // time it's actually won (not just attempted), show a one-time ending
+  // cutscene before the normal results screen. Replays after that go
+  // straight to results — the ending is a moment, not a repeat interruption.
+  const isFinalVictory = success && !state.flightBeaten;
+  if(success) state.flightBeaten = true;
+
+  saveState();
+
+  const resultsData = { success, b, starsEarned, xpGained, levelAfter, leveledUp, newGear };
+  if(isFinalVictory){
+    renderFlightVictoryScene(resultsData);
+  } else {
+    renderFlightResultsScreen(resultsData);
+  }
+  activeFlight = null;
+}
+
+function renderFlightResultsScreen(data){
+  const { success, b, starsEarned, xpGained, levelAfter, leveledUp, newGear } = data;
+  playSFX(success ? 'win' : 'lose');
+  const panel = document.getElementById('questPanel');
+  panel.classList.remove('flightActive');
+  panel.classList.remove('victorySceneActive');
+  const starDisplay = [1,2,3].map(n => `<span class="${n<=starsEarned?'star-on':'star-off'}">★</span>`).join('');
+  const headline = success ? 'Sky cleared — nicely flown! 🔥🐉' : 'Out of lives — time to land and recover!';
+
+  panel.innerHTML = `
+    <button class="closeBtn" onclick="closeQuest()">✕</button>
+    <div class="resultsArea">
+      <div class="questBadge" style="background:linear-gradient(135deg,var(--coral),var(--gold)); margin:0 auto;">🔥</div>
+      <h2>Skyfire Flight</h2>
+      <p style="font-weight:800;color:var(--ink);margin-top:4px;">${headline}</p>
+      <p>${b.correctCount} correct hit${b.correctCount===1?'':'s'} of ${FLIGHT_TARGET_CORRECT}${b.misses ? ` · ${b.misses} miss${b.misses===1?'':'es'}` : ' · no misses!'}</p>
+      <div class="bigStars">${starDisplay}</div>
+      <div class="xpGainLine">
+        <span style="font-weight:800;color:var(--gold)">+${xpGained} XP</span>
+        <div class="xpGainBar"><div class="xpGainFill" id="xpGainFill"></div></div>
+      </div>
+      <div class="levelUpBanner" id="levelUpBanner">
+        ⭐ Level up! ${state.hero.name} reached Level ${levelAfter}.
+        ${newGear.length ? '<br>New gear unlocked: ' + newGear.map(g=>g.icon+' '+g.name).join(', ') : ''}
+      </div>
+      <button onclick="openFlightMode()">🔁 ${success ? 'Play Again' : 'Try Again'}</button>
+      <button onclick="closeQuest()" style="background:var(--indigo);margin-left:8px;">🗺️ Back to the Map</button>
+    </div>
+  `;
+
+  requestAnimationFrame(() => {
+    const fill = document.getElementById('xpGainFill');
+    if(fill) fill.style.width = Math.min(100, Math.round((heroXpIntoLevel()/heroXpNeeded())*100)) + '%';
+  });
+  if(leveledUp){
+    setTimeout(() => {
+      const banner = document.getElementById('levelUpBanner');
+      if(banner) banner.classList.add('show');
+      playSFX('levelup');
+    }, 500);
+  }
+}
+
+// One-time ending cutscene: the dragon carries the hero off the sky-battle
+// and glides into a treasure cave glittering with gold. Plays once, the
+// first time Skyfire Flight is actually won, then hands off to the normal
+// results screen (auto-advances, but can also be skipped with a tap).
+let pendingFlightResults = null;
+// Simple Web Audio fanfare for the ending cutscene — no external assets,
+// wrapped defensively since some browsers restrict audio until a user
+// gesture (the flight round ending is itself triggered by the player's own
+// key presses, so this call chain already has one).
+// Shared Web Audio setup for all sound effects in the game (Muncher, Dragon
+// Rider Showdown, Skyfire Flight, and the ending cutscene). One AudioContext
+// is created lazily on first use and reused — creating a fresh context for
+// every chomp/hit during fast-paced play would be wasteful and can cause
+// audio glitches. Everything is wrapped defensively since some browsers
+// restrict audio until a user gesture, and this should never break gameplay
+// if it's unavailable.
+function getAudioCtx(){
+  if(!window.__nlAudioCtx){
+    try{
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if(AudioCtx) window.__nlAudioCtx = new AudioCtx();
+    }catch(e){}
+  }
+  return window.__nlAudioCtx || null;
+}
+function playTone(freq, opts){
+  opts = opts || {};
+  try{
+    const ctx = getAudioCtx();
+    if(!ctx) return;
+    const type = opts.type || 'sine';
+    const duration = opts.duration != null ? opts.duration : 0.18;
+    const volume = opts.volume != null ? opts.volume : 0.14;
+    const delay = opts.delay || 0;
+    const glideTo = opts.glideTo || null;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    const start = ctx.currentTime + delay;
+    osc.frequency.setValueAtTime(freq, start);
+    if(glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, start + duration);
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(volume, start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.03);
+  }catch(e){}
+}
+function playChime(notes, type){
+  notes.forEach((freq, i) => playTone(freq, { type: type || 'triangle', duration: 0.55, volume: 0.16, delay: i*0.14 }));
+}
+// Named sound-effect presets shared across Number Muncher, the Dragon Rider
+// Showdown, and Skyfire Flight, so each game feels consistent without
+// duplicating oscillator code everywhere it's needed.
+function playSFX(name){
+  switch(name){
+    case 'correct': // munching a correct number / a good answer
+      playTone(880, { type:'sine', duration:0.13, volume:0.15 });
+      playTone(1318.5, { type:'sine', duration:0.18, volume:0.13, delay:0.07 });
+      break;
+    case 'wrong': // munching a wrong number
+      playTone(220, { type:'sawtooth', duration:0.22, volume:0.11, glideTo:140 });
+      break;
+    case 'hit': // a correct hit in the boss fight or flight
+      playTone(660, { type:'triangle', duration:0.09, volume:0.15 });
+      playTone(990, { type:'triangle', duration:0.15, volume:0.13, delay:0.05 });
+      break;
+    case 'miss': // a wrong hit, an escaped target, or taking damage
+      playTone(160, { type:'sawtooth', duration:0.22, volume:0.15, glideTo:80 });
+      break;
+    case 'caught': // a Muncher enemy catches the player
+      playTone(300, { type:'square', duration:0.11, volume:0.13 });
+      playTone(180, { type:'square', duration:0.17, volume:0.13, delay:0.09 });
+      break;
+    case 'win': // clearing a round
+      [523.25, 659.25, 783.99, 1046.5].forEach((f,i) => playTone(f, { type:'triangle', duration:0.32, volume:0.15, delay:i*0.1 }));
+      break;
+    case 'lose': // running out of lives
+      [392, 329.63, 261.63].forEach((f,i) => playTone(f, { type:'sine', duration:0.3, volume:0.12, delay:i*0.15 }));
+      break;
+    case 'levelup': // hero gains a level — a brighter, sparklier flourish than a plain round win
+      [659.25, 830.61, 987.77, 1318.5, 1567.98].forEach((f,i) => playTone(f, { type:'sine', duration:0.28, volume:0.13, delay:i*0.08 }));
+      break;
+  }
+}
+
+// A properly detailed mountain-and-cave backdrop for the ending cutscene:
+// layered far/mid/near ranges for atmospheric depth, snow caps and rock-face
+// shading facets on the hero peak, a carved pointed cave archway (not a soft
+// blob) with a full ring of varied stalactites/stalagmites and a hinted
+// back wall for depth, plus rubble, pines, and a worn path at the base.
+function victoryMountainSVG(){
+  return `<svg viewBox="0 0 340 340" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="victorySkyGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fff7e0"/>
+        <stop offset="35%" stop-color="#ffd9a0"/>
+        <stop offset="70%" stop-color="#7fb3e8"/>
+        <stop offset="100%" stop-color="#3f6fb0"/>
+      </linearGradient>
+      <linearGradient id="victoryNearFaceGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#8a6c52"/>
+        <stop offset="55%" stop-color="#5b4636"/>
+        <stop offset="100%" stop-color="#3c2d22"/>
+      </linearGradient>
+      <radialGradient id="victoryCaveGlowGrad" cx="46%" cy="60%" r="65%">
+        <stop offset="0%" stop-color="#ffe9b0"/>
+        <stop offset="30%" stop-color="#ffb84d"/>
+        <stop offset="60%" stop-color="#a34e10"/>
+        <stop offset="100%" stop-color="#0c0402"/>
+      </radialGradient>
+    </defs>
+    <rect width="340" height="340" fill="url(#victorySkyGrad)"/>
+
+    <path d="M-10 300 L20 210 L45 250 L75 175 L100 230 L130 160 L155 220 L185 190 L210 240 L240 200 L265 245 L300 210 L350 260 L350 340 L-10 340 Z" fill="#9fb3cf" opacity="0.55"/>
+
+    <path d="M-10 320 L35 195 L65 235 L95 155 L120 210 L150 145 L172 200 L205 165 L228 215 L255 175 L285 225 L320 190 L350 230 L350 340 L-10 340 Z" fill="#71879f" opacity="0.75"/>
+    <path d="M95 155 L120 210 L106 213 L92 178 Z" fill="#eef3f8" opacity="0.8"/>
+    <path d="M150 145 L172 200 L159 203 L146 168 Z" fill="#eef3f8" opacity="0.8"/>
+
+    <path d="M-10 340 L15 260 L48 300 L80 210 L108 250 L140 165 L168 222 L188 190 L210 235 L232 175 L255 205 L280 150 L305 195 L340 175 L340 340 Z" fill="url(#victoryNearFaceGrad)"/>
+    <path d="M140 165 L168 222 L152 226 L134 186 Z" fill="#2e2116" opacity="0.55"/>
+    <path d="M280 150 L305 195 L289 199 L272 168 Z" fill="#2e2116" opacity="0.5"/>
+    <path d="M210 235 L232 175 L238 178 L220 238 Z" fill="#2e2116" opacity="0.4"/>
+    <path d="M140 165 L149 183 L134 186 Z" fill="#a6866a" opacity="0.7"/>
+    <path d="M280 150 L288 168 L272 168 Z" fill="#a6866a" opacity="0.7"/>
+    <path d="M48 300 L80 210 L86 214 L58 302 Z" fill="#a6866a" opacity="0.5"/>
+    <path d="M136 166 L140 165 L144 173 L133 175 Z" fill="#f5f1ea"/>
+    <path d="M277 152 L280 150 L284 158 L274 160 Z" fill="#f5f1ea"/>
+    <path d="M60 260 Q70 240 65 215" stroke="#241a10" stroke-width="1.4" fill="none" opacity="0.35"/>
+    <path d="M245 210 Q252 195 246 178" stroke="#241a10" stroke-width="1.4" fill="none" opacity="0.35"/>
+    <path d="M180 220 Q188 205 182 192" stroke="#241a10" stroke-width="1.2" fill="none" opacity="0.3"/>
+
+    <path d="M186 340 L183 275 Q181 240 199 219 L212 229 Q222 194 254 199 L263 214 Q291 202 308 232 L298 245 Q317 264 309 296 L295 291 Q301 318 278 338 Z"
+          fill="#1a0e07" stroke="#160a04" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M191 336 L188 277 Q186 244 202 224 L213 233 Q224 200 253 205 L261 219 Q287 208 302 236 L293 248 Q310 266 303 295 L291 290 Q296 315 275 334 Z"
+          fill="url(#victoryCaveGlowGrad)"/>
+    <path d="M215 320 Q210 280 228 258 Q248 238 270 248 Q286 262 282 292 Q278 312 258 322 Z" fill="#3a1a06" opacity="0.55"/>
+    <path d="M206 226 L210 246 L215 229 Z" fill="#120a05"/>
+    <path d="M223 208 L228 233 L234 211 Z" fill="#120a05"/>
+    <path d="M247 202 L251 224 L257 204 Z" fill="#120a05"/>
+    <path d="M270 208 L274 228 L280 210 Z" fill="#120a05"/>
+    <path d="M291 222 L294 240 L300 224 Z" fill="#120a05"/>
+    <path d="M222 330 L227 306 L233 330 Z" fill="#120a05" opacity="0.85"/>
+    <path d="M266 333 L270 312 L276 333 Z" fill="#120a05" opacity="0.85"/>
+
+    <ellipse cx="200" cy="334" rx="12" ry="5.5" fill="#3f2f22"/>
+    <ellipse cx="230" cy="338" rx="16" ry="6" fill="#4a3826"/>
+    <ellipse cx="290" cy="336" rx="13" ry="5.5" fill="#3f2f22"/>
+    <ellipse cx="160" cy="333" rx="10" ry="4.5" fill="#453424"/>
+
+    <g transform="translate(115,318)">
+      <path d="M0 18 L-9 18 L-5 8 L-11 8 L0 -14 L11 8 L5 8 L9 18 Z" fill="#3d5c3a"/>
+      <rect x="-2" y="18" width="4" height="5" fill="#5c4530"/>
+    </g>
+    <g transform="translate(132,326) scale(0.75)">
+      <path d="M0 18 L-9 18 L-5 8 L-11 8 L0 -14 L11 8 L5 8 L9 18 Z" fill="#33502f"/>
+      <rect x="-2" y="18" width="4" height="5" fill="#5c4530"/>
+    </g>
+
+    <path d="M40 340 Q90 320 130 315 Q165 310 190 300" stroke="#c9a876" stroke-width="7" fill="none" opacity="0.3" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// Reusable little dragon-mount SVG (same bold style as the pet companion,
+// scaled up) with its own wing flap, used to carry the hero into the cave.
+function victoryDragonMountSVG(){
+  return `<svg class="victoryDragonSvg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(46,46) scale(1.7)">
+      <path d="M-9 2 Q-15 5 -13 -1 Q-10 -3 -8 0 Z" fill="#3FBE72" stroke="#1f4d33" stroke-width="1.1" stroke-linejoin="round"/>
+      <path d="M-3 -3 Q-9 -12 -14 -9 Q-11 -3 -6 -1 Z" fill="#3FBE72" stroke="#1f4d33" stroke-width="1.1" stroke-linejoin="round">
+        <animateTransform attributeName="transform" type="rotate" values="0 -3 -3;16 -3 -3;0 -3 -3" dur="0.4s" repeatCount="indefinite"/>
+      </path>
+      <ellipse cx="0" cy="0" rx="8" ry="5.6" fill="#57DE8C" stroke="#1f4d33" stroke-width="1.2"/>
+      <ellipse cx="0.5" cy="2.3" rx="4.6" ry="2.7" fill="#EAFBF0"/>
+      <path d="M-3.6 -4.3 L-2.6 -7.4 L-0.9 -4.7 Z" fill="#1f4d33"/>
+      <path d="M0 -4.9 L1.2 -8 L2.8 -4.9 Z" fill="#1f4d33"/>
+      <path d="M-1 -3.5 Q4 -13 10 -10 Q7 -4 4 -1 Z" fill="#57DE8C" stroke="#1f4d33" stroke-width="1.1" stroke-linejoin="round">
+        <animateTransform attributeName="transform" type="rotate" values="0 -1 -3.5;-18 -1 -3.5;0 -1 -3.5" dur="0.4s" repeatCount="indefinite"/>
+      </path>
+      <circle cx="9" cy="-2.3" r="5.4" fill="#57DE8C" stroke="#1f4d33" stroke-width="1.2"/>
+      <path d="M6 -6.6 L5.6 -9.8 L8.2 -7 Z" fill="#F7C948" stroke="#8a5a12" stroke-width="0.7"/>
+      <path d="M9.4 -7.3 L9.6 -10.5 L11.6 -7.4 Z" fill="#F7C948" stroke="#8a5a12" stroke-width="0.7"/>
+      <ellipse cx="13.2" cy="-0.6" rx="2.9" ry="2.3" fill="#EAFBF0" stroke="#1f4d33" stroke-width="0.9"/>
+      <circle cx="14" cy="-1.1" r="0.55" fill="#1f4d33"/>
+      <circle cx="13" cy="0.3" r="0.55" fill="#1f4d33"/>
+      <circle cx="9.8" cy="-3.5" r="2.9" fill="#fff" stroke="#1f4d33" stroke-width="0.9"/>
+      <circle cx="10.4" cy="-2.9" r="1.7" fill="#1f2b26"/>
+      <circle cx="9.6" cy="-3.8" r="0.6" fill="#fff"/>
+      <ellipse cx="7.6" cy="1" rx="1.6" ry="1" fill="#FF8FA3" opacity="0.6"/>
+    </g>
+  </svg>`;
+}
+
+function renderFlightVictoryScene(resultsData){
+  pendingFlightResults = resultsData;
+  const heroLvl = heroLevel();
+  const panel = document.getElementById('questPanel');
+  panel.classList.remove('flightActive');
+  panel.classList.add('victorySceneActive');
+
+  const totalStars = Object.values(state.stars).reduce((a,b)=>a+b,0) + state.bossStars + state.flightStars;
+  const kingdomsCleared = Object.values(state.stars).filter(s=>s>=STARS_TO_UNLOCK).length;
+
+  const confettiSpec = [
+    ['🪙',8,0], ['✨',18,0.1], ['🪙',30,0.2], ['💎',42,0.05], ['🪙',55,0.25],
+    ['✨',67,0.15], ['💎',78,0.3], ['🪙',88,0.1]
+  ];
+  const confettiHtml = confettiSpec.map(([emoji,left,delay]) =>
+    `<span style="left:${left}%;animation-delay:${3.15+delay}s;">${emoji}</span>`
+  ).join('');
+
+  panel.innerHTML = `
+    <div class="victoryScene" id="victoryScene">
+      <div class="victorySky"></div>
+      <div class="victoryCloud" style="left:10%;top:20%;">☁️</div>
+      <div class="victoryCloud" style="left:26%;top:44%;font-size:15px;animation-delay:1.5s;">☁️</div>
+      <div class="victoryTwinkle" style="left:14%;top:12%;animation-delay:.2s;">✦</div>
+      <div class="victoryTwinkle" style="left:22%;top:34%;animation-delay:1s;">✦</div>
+      <div class="victoryTwinkle" style="left:6%;top:48%;animation-delay:.6s;">✦</div>
+      <div class="victoryMountainWrap">${victoryMountainSVG()}</div>
+      <div class="victoryGlow"></div>
+      <div class="victoryShockwave"></div>
+      <div class="victoryTreasurePile">
+        <span style="left:6%;">💰</span>
+        <span style="left:34%;">🪙</span>
+        <span style="left:58%;">💎</span>
+        <span style="left:80%;">🪙</span>
+        <span style="left:20%;top:6px;">👑</span>
+        <span style="left:66%;top:2px;">💎</span>
+      </div>
+      <div class="victoryConfetti">${confettiHtml}</div>
+      <div class="victorySparkle" style="left:62%;top:30%;">✨</div>
+      <div class="victorySparkle" style="left:74%;top:52%;animation-delay:.25s;">✨</div>
+      <div class="victorySparkle" style="left:52%;top:58%;animation-delay:.5s;">✨</div>
+      <div class="victoryFlyer" id="victoryFlyer">
+        ${victoryDragonMountSVG()}
+        <div class="victoryRider">${avatarSVG(state.hero.name, heroLvl, 26)}</div>
+      </div>
+      <div class="victoryTitle">
+        <h2>🎉 The Dragon's Treasure! 🎉</h2>
+        <p>${state.hero.name} and their dragon found the kingdom's hidden gold!</p>
+        <span class="victoryStats">Level ${heroLvl} · ${totalStars}★ earned · ${kingdomsCleared}/${islands.length} Kingdoms cleared</span>
+      </div>
+      <button class="victoryContinueBtn" onclick="continueFromVictoryScene()">Continue ✨</button>
+    </div>
+  `;
+
+  playChime([523.25, 659.25, 783.99], 'triangle');
+  clearTimeout(window.__victoryArrivalSoundTimer);
+  window.__victoryArrivalSoundTimer = setTimeout(() => playChime([1046.5, 1318.5], 'sine'), 3050);
+
+  clearTimeout(window.__victorySceneTimer);
+  window.__victorySceneTimer = setTimeout(() => {
+    if(pendingFlightResults) continueFromVictoryScene();
+  }, 7800);
+}
+function continueFromVictoryScene(){
+  clearTimeout(window.__victorySceneTimer);
+  clearTimeout(window.__victoryArrivalSoundTimer);
+  if(!pendingFlightResults) return;
+  const data = pendingFlightResults;
+  pendingFlightResults = null;
+  renderFlightResultsScreen(data);
+}
+
+/* ============ INIT ============ */
+(async function init(){
+  await loadState();
+  renderMap();
+})();
+</script>
+</body>
+</html>
